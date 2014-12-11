@@ -11,9 +11,6 @@
 #include <lunchbox/servus.h>
 #include <boost/bind.hpp>
 
-#include <random>
-#include <chrono>
-
 namespace
 {
 class Publisher : public lunchbox::Thread
@@ -47,18 +44,10 @@ private:
 };
 }
 
-unsigned short generateRandomPort( )
-{
-    const unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator( seed );
-    std::uniform_int_distribution< unsigned short > distribution( 4096, 65535 );
-    return distribution( generator );
-}
-
 BOOST_AUTO_TEST_CASE(test_subscribe_to_same_schema)
 {
     std::stringstream uri;
-    uri << "foo://127.0.0.1:" << generateRandomPort( );
+    uri << "foo://127.0.0.1:" << (lunchbox::RNG().get<uint16_t>() % 60000) + 1024;
 
     zeq::Publisher publisher( lunchbox::URI( "foo://" ));
     BOOST_CHECK_NO_THROW(
@@ -70,7 +59,8 @@ BOOST_AUTO_TEST_CASE(test_subscribe_to_different_schema)
     zeq::Publisher publisher( lunchbox::URI( "bar://" ));
 
     std::stringstream uriSubscriber;
-    uriSubscriber << "bar://127.0.0.1:" << generateRandomPort( );
+    uriSubscriber << "bar://127.0.0.1:"
+                  << (lunchbox::RNG().get<uint16_t>() % 60000) + 1024;
 
     BOOST_CHECK_NO_THROW(
                 zeq::Subscriber subscriber( lunchbox::URI( uriSubscriber.str() )));
@@ -125,7 +115,7 @@ BOOST_AUTO_TEST_CASE(test_publish_receive)
 BOOST_AUTO_TEST_CASE(test_no_receive)
 {
     std::stringstream uri;
-    uri << "foo://127.0.0.1:" << generateRandomPort( );
+    uri << "foo://127.0.0.1:" << (lunchbox::RNG().get<uint16_t>() % 60000) + 1024;
 
     zeq::Subscriber subscriber( lunchbox::URI( uri.str() ));
     BOOST_CHECK( !subscriber.receive( 100 ));
