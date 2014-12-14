@@ -44,7 +44,8 @@ public:
 
     void remove( ::zeq::Receiver* receiver )
     {
-        std::remove( _shared.begin(), _shared.end(), receiver );
+        _shared.erase( std::remove( _shared.begin(), _shared.end(), receiver ),
+                       _shared.end( ));
     }
 
     bool receive( const uint32_t timeout )
