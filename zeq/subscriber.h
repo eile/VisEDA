@@ -13,6 +13,7 @@ namespace zeq
 {
 
 namespace detail { class Subscriber; }
+namespace connection { namespace detail { class Broker; }}
 
 /**
  * Subscribes to Publisher to receive events.
@@ -72,6 +73,7 @@ public:
     ZEQ_API bool deregisterHandler( const uint128_t& event );
 
 private:
+    friend class connection::detail::Broker;
     detail::Subscriber* const _impl;
 
     // Receiver API

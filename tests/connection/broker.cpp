@@ -17,8 +17,8 @@ BOOST_AUTO_TEST_CASE(test_broker)
     const unsigned short port = (rng.get<uint16_t>() % 60000) + 1024;
     const std::string& portStr = boost::lexical_cast< std::string >( port );
     zeq::Subscriber subscriber( lunchbox::URI( "foo://localhost:" + portStr ));
-    BOOST_CHECK( subscriber.registerHandler( zeq::vocabulary::EVENT_CAMERA,
-                                      boost::bind( &test::onCameraEvent, _1 )));
+    BOOST_CHECK( subscriber.registerHandler( zeq::vocabulary::EVENT_ECHO,
+                                      boost::bind( &test::onEchoEvent, _1 )));
 
     // Using a different scheme so zeroconf resolution does not work
     zeq::Publisher publisher( lunchbox::URI( "bar://*:" + portStr ));
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(test_broker)
     for( size_t i = 0; i < 10; ++i )
     {
         BOOST_CHECK( publisher.publish(
-                         zeq::vocabulary::serializeCamera( test::camera )));
+                         zeq::vocabulary::serializeEcho( test::echoMessage )));
 
         if( subscriber.receive( 100 ))
         {
