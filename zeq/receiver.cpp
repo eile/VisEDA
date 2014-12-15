@@ -44,7 +44,8 @@ public:
 
     void remove( ::zeq::Receiver* receiver )
     {
-        std::remove( _shared.begin(), _shared.end(), receiver );
+        _shared.erase( std::remove( _shared.begin(), _shared.end(), receiver ),
+                       _shared.end( ));
     }
 
     bool receive( const uint32_t timeout )
@@ -120,6 +121,10 @@ private:
 
         default:
         {
+            // For each event, find the subscriber which supplied the socket and
+            // inform it in case there is data on the socket. We saved #sockets
+            // for each subscriber above and track them down here as we iterate
+            // over all sockets:
             ReceiversIter i = _shared.begin();
             size_t interval = intervals.front();
             intervals.pop_front();

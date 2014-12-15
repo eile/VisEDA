@@ -18,13 +18,20 @@ namespace detail { class Receiver; }
 
 /**
  * Base class for entities receiving data.
- * Not intended to be used independently. Not thread safe.
+ *
+ * Provides a receive() method, which demultiplexes data between multiple inputs
+ * of multiple instances of receivers. Receivers form a shared group by linking
+ * them at construction time.
+ *
+ * Not intended to be as a final class. Not thread safe.
+ *
+ * Example: @include tests/receiver.cpp
  */
 class Receiver : public boost::noncopyable
 {
 public:
     /** Create a new standalone receiver. */
-    ZEQ_API explicit Receiver();
+    ZEQ_API Receiver();
 
     /**
      * Create a shared receiver.
@@ -32,8 +39,7 @@ public:
      * All receivers sharing a group may receive data when receive() is called
      * on any of them.
      *
-     * @param shared another receiver to share data reception with.
-     */
+     * @param shared another receiver to form a simultaneous receive group with.     */
     ZEQ_API explicit Receiver( Receiver& shared );
 
     /** Destroy this receiver. */
@@ -52,13 +58,13 @@ public:
 protected:
     friend class detail::Receiver;
 
-    /** Add this receiver's socket to the given list */
+    /** Add this receiver's sockets to the given list */
     virtual void addSockets( std::vector< detail::Socket >& entries ) = 0;
 
     /**
      * Process data on a signalled socket.
      *
-     * @param the socket provided from addSockets().
+     * @param socket the socket provided from addSockets().
      */
     virtual void process( detail::Socket& socket ) = 0;
 
