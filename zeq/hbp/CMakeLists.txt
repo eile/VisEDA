@@ -22,6 +22,6 @@ if(MSVC)
   list(APPEND ZEQHBP_LINK_LIBRARIES Ws2_32)
 endif()
 
-set(PROJECT_INCLUDE_NAME zeqHBP)
+set(PROJECT_INCLUDE_NAME zeq/hbp)
 add_definitions(-DZEQ_SHARED)
 common_library(zeqHBP)
