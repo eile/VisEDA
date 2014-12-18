@@ -27,13 +27,14 @@ public:
         , _socket( zmq_socket( context, ZMQ_REP ))
     {
         const std::string zmqAddr( std::string( "tcp://" ) + address );
-        if( zmq_bind( _socket, zmqAddr.c_str( )) != 0 )
+        if( zmq_bind( _socket, zmqAddr.c_str( )) == -1 )
         {
             zmq_close( _socket );
             LBTHROW( std::runtime_error(
-                         "Cannot connect broker to " + address + ", got " +
+                         "Cannot connect broker to " + zmqAddr + ", got " +
                          zmq_strerror( zmq_errno( ))));
         }
+        LBINFO << "Bound broker to " << zmqAddr << std::endl;
     }
 
     ~Broker()
@@ -55,13 +56,13 @@ public:
         zmq_msg_t msg;
         zmq_msg_init( &msg );
         zmq_msg_recv( &msg, socket.socket, 0 );
-        zmq_msg_close( &msg );
-
         const std::string address( (const char*)zmq_msg_data( &msg ),
                                    zmq_msg_size( &msg ));
-        _subscriber._impl->_addConnection( context, address );
 
+        _subscriber._impl->_addConnection( context,
+                                           std::string( "tcp://" ) + address );
         zmq_msg_send( &msg, socket.socket, 0 );
+        zmq_msg_close( &msg );
     }
 
 private:

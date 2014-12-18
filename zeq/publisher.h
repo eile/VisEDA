@@ -43,6 +43,8 @@ public:
      */
     ZEQ_API bool publish( const Event& event );
 
+    const std::string& getAddress() const; //!< @internal
+
 private:
     detail::Publisher* const _impl;
 };

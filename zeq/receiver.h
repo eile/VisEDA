@@ -39,7 +39,8 @@ public:
      * All receivers sharing a group may receive data when receive() is called
      * on any of them.
      *
-     * @param shared another receiver to form a simultaneous receive group with.     */
+     * @param shared another receiver to form a simultaneous receive group with.
+     */
     ZEQ_API explicit Receiver( Receiver& shared );
 
     /** Destroy this receiver. */

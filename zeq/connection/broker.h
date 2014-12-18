@@ -3,8 +3,8 @@
  *                     Stefan.Eilemann@epfl.ch
  */
 
-#ifndef ZEQ_BROKER_H
-#define ZEQ_BROKER_H
+#ifndef ZEQ_CONNECTION_BROKER_H
+#define ZEQ_CONNECTION_BROKER_H
 
 #include <zeq/receiver.h> // base class
 
@@ -14,7 +14,11 @@ namespace connection
 {
 namespace detail { class Broker; }
 
-/** Brokers subscription requests for a zeq::Subscriber. */
+/**
+ * Brokers subscription requests for a zeq::Subscriber.
+ *
+ * Example: @include tests/connection/broker.cpp
+ */
 class Broker : public Receiver
 {
 public:

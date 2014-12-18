@@ -3,6 +3,8 @@
  *                     Stefan.Eilemann@epfl.ch
  */
 
+#define BOOST_TEST_MODULE zeq_connection_broker
+
 #include "../broker.h"
 #include <zeq/connection/broker.h>
 
@@ -11,37 +13,56 @@
 #include <lunchbox/servus.h>
 #include <boost/bind.hpp>
 
+using boost::lexical_cast;
+
+const unsigned short port = (lunchbox::RNG().get<uint16_t>() % 60000) + 1024;
+bool received = false;
+
+class Service : public lunchbox::Thread
+{
+public:
+    void run() final
+    {
+        zeq::Subscriber subscriber( lunchbox::URI( "foo://127.0.0.1:" +
+                                          lexical_cast< std::string >( port )));
+        BOOST_CHECK( subscriber.registerHandler( zeq::vocabulary::EVENT_ECHO,
+                                        boost::bind( &test::onEchoEvent, _1 )));
+
+        // Using the connection broker in place of zeroconf
+        std::string address = std::string( "127.0.0.1:" ) +
+                              lexical_cast<std::string>( port+1 );
+        zeq::connection::Broker broker( address, subscriber );
+
+        for( size_t i = 0; i < 10; ++i )
+        {
+            if( subscriber.receive( 100 ))
+            {
+                received = true;
+                return;
+            }
+        }
+    }
+};
+
 BOOST_AUTO_TEST_CASE(test_broker)
 {
-    lunchbox::RNG rng;
-    const unsigned short port = (rng.get<uint16_t>() % 60000) + 1024;
-    const std::string& portStr = boost::lexical_cast< std::string >( port );
-    zeq::Subscriber subscriber( lunchbox::URI( "foo://localhost:" + portStr ));
-    BOOST_CHECK( subscriber.registerHandler( zeq::vocabulary::EVENT_ECHO,
-                                      boost::bind( &test::onEchoEvent, _1 )));
+    Service service;
+    service.start();
 
     // Using a different scheme so zeroconf resolution does not work
-    zeq::Publisher publisher( lunchbox::URI( "bar://*:" + portStr ));
+    zeq::Publisher publisher( lunchbox::URI( "bar://*:" +
+                                          lexical_cast< std::string >( port )));
+    const std::string address =
+        std::string( "127.0.0.1:" ) + lexical_cast< std::string >( port+1 );
+    BOOST_CHECK( zeq::connection::Service::subscribe( address, publisher ));
 
-    // Using the connection broker in place of zeroconf
-    const std::string& brokerPort = boost::lexical_cast< std::string >( port+1 );
-    zeq::connection::Broker broker( std::string( "*:" ) + brokerPort,
-                                    subscriber );
-    zeq::connection::Service service;
-    BOOST_CHECK( service.subscribe( std::string( "localhost:" ) + brokerPort,
-                                    publisher ));
-
-    bool received = false;
-    for( size_t i = 0; i < 10; ++i )
+    for( size_t i = 0; i < 10 && !received; ++i )
     {
         BOOST_CHECK( publisher.publish(
                          zeq::vocabulary::serializeEcho( test::echoMessage )));
-
-        if( subscriber.receive( 100 ))
-        {
-            received = true;
-            break;
-        }
+        lunchbox::sleep( 100 );
     }
+
     BOOST_CHECK( received );
+    service.join();
 }
