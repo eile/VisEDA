@@ -1,12 +1,13 @@
 
-/* Copyright (c) 2014, Human Brain Project
- *                     Stefan.Eilemann@epfl.ch
+/* Copyright (c) 2014-2015, Human Brain Project
+ *                          Stefan.Eilemann@epfl.ch
  */
 
 #ifndef ZEQ_CONNECTION_BROKER_H
 #define ZEQ_CONNECTION_BROKER_H
 
 #include <zeq/receiver.h> // base class
+#include <lunchbox/debug.h>
 
 namespace zeq
 {
@@ -15,7 +16,7 @@ namespace connection
 namespace detail { class Broker; }
 
 /**
- * Brokers subscription requests for a zeq::Subscriber.
+ * Brokers subscription requests for a zeq::Receiver.
  *
  * Example: @include tests/connection/broker.cpp
  */
@@ -25,18 +26,18 @@ public:
     /**
      * Create a new subscription broker.
      *
-     * The given subscriber has to have at least the same lifetime as this
-     * broker. The subscriber and receiver are automatically shared.
+     * The given receiver has to have at least the same lifetime as this
+     * broker. The receiver and broker are automatically shared.
      *
-     * For simplicity, only a single Subscriber is handled by a Broker. The
-     * implementation should be extended if multiple subscribers shall be
+     * For simplicity, only a single Receiver is handled by a Broker. The
+     * implementation should be extended if multiple receivers shall be
      * handled.
      *
      * @param address the zmq reply socket address to be used.
-     * @param subscriber the Subscriber to manage.
+     * @param receiver the Receiver to manage.
      * @throw std::runtime_error when zmq setup failed.
      */
-    ZEQ_API Broker( const std::string& address, Subscriber& subscriber );
+    ZEQ_API Broker( const std::string& address, Receiver& receiver );
 
     /** Destroy this broker. */
     ZEQ_API ~Broker();
@@ -47,6 +48,7 @@ private:
     // Receiver API
     void addSockets( std::vector< zeq::detail::Socket >& entries ) final;
     void process( zeq::detail::Socket& socket ) final;
+    void addConnection( const std::string& ) final { LBDONTCALL; }
 };
 
 }

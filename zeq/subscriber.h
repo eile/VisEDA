@@ -1,7 +1,7 @@
 
-/* Copyright (c) 2014, Human Brain Project
- *                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>
- *                     Stefan.Eilemann@epfl.ch
+/* Copyright (c) 2014-2015, Human Brain Project
+ *                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
+ *                          Stefan.Eilemann@epfl.ch
  */
 
 #ifndef ZEQ_SUBSCRIBER_H
@@ -13,7 +13,6 @@ namespace zeq
 {
 
 namespace detail { class Subscriber; }
-namespace connection { namespace detail { class Broker; }}
 
 /**
  * Subscribes to Publisher to receive events.
@@ -73,13 +72,13 @@ public:
     ZEQ_API bool deregisterHandler( const uint128_t& event );
 
 private:
-    friend class connection::detail::Broker;
     detail::Subscriber* const _impl;
 
     // Receiver API
     void addSockets( std::vector< detail::Socket >& entries ) final;
     void process( detail::Socket& socket ) final;
     void update() final;
+    void addConnection( const std::string& uri ) final;
 };
 
 }

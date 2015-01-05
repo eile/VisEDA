@@ -1,12 +1,11 @@
 
-/* Copyright (c) 2014, Human Brain Project
- *                     Stefan.Eilemann@epfl.ch
+/* Copyright (c) 2014-2015, Human Brain Project
+ *                          Stefan.Eilemann@epfl.ch
  */
 
 #include "broker.h"
 #include "../detail/socket.h"
-#include "../detail/subscriber.h"
-#include "../subscriber.h"
+#include "../receiver.h"
 
 #include <boost/foreach.hpp>
 #include <lunchbox/log.h>
@@ -22,8 +21,8 @@ namespace detail
 class Broker
 {
 public:
-    Broker( Subscriber& subscriber, const std::string& address, void* context )
-        : _subscriber( subscriber )
+    Broker( Receiver& receiver, const std::string& address, void* context )
+        : _receiver( receiver )
         , _socket( zmq_socket( context, ZMQ_REP ))
     {
         const std::string zmqAddr( std::string( "tcp://" ) + address );
@@ -31,7 +30,7 @@ public:
         {
             zmq_close( _socket );
             LBTHROW( std::runtime_error(
-                         "Cannot connect broker to " + zmqAddr + ", got " +
+                         "Cannot connect broker to " + zmqAddr + ": " +
                          zmq_strerror( zmq_errno( ))));
         }
         LBINFO << "Bound broker to " << zmqAddr << std::endl;
@@ -51,7 +50,7 @@ public:
         entries.push_back( entry );
     }
 
-    void process( void* context, zeq::detail::Socket& socket )
+    void process( zeq::detail::Socket& socket )
     {
         zmq_msg_t msg;
         zmq_msg_init( &msg );
@@ -59,21 +58,20 @@ public:
         const std::string address( (const char*)zmq_msg_data( &msg ),
                                    zmq_msg_size( &msg ));
 
-        _subscriber._impl->_addConnection( context,
-                                           std::string( "tcp://" ) + address );
+        _receiver.addConnection( std::string( "tcp://" ) + address );
         zmq_msg_send( &msg, socket.socket, 0 );
         zmq_msg_close( &msg );
     }
 
 private:
-    zeq::Subscriber& _subscriber;
+    zeq::Receiver& _receiver;
     void* _socket;
 };
 }
 
-Broker::Broker( const std::string& address, Subscriber& subscriber )
-    : Receiver( subscriber )
-    , _impl( new detail::Broker( subscriber, address, getZMQContext( )))
+Broker::Broker( const std::string& address, Receiver& receiver )
+    : Receiver( receiver )
+    , _impl( new detail::Broker( receiver, address, getZMQContext( )))
 {
 }
 
@@ -89,9 +87,8 @@ void Broker::addSockets( std::vector< zeq::detail::Socket >& entries )
 
 void Broker::process( zeq::detail::Socket& socket )
 {
-    _impl->process( getZMQContext(), socket );
+    _impl->process( socket );
 }
-
 
 }
 }

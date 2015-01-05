@@ -1,6 +1,6 @@
 
-/* Copyright (c) 2014, Human Brain Project
- *                     Stefan.Eilemann@epfl.ch
+/* Copyright (c) 2014-2015, Human Brain Project
+ *                          Stefan.Eilemann@epfl.ch
  */
 
 #define BOOST_TEST_MODULE zeq_connection_broker
@@ -30,7 +30,7 @@ public:
 
         // Using the connection broker in place of zeroconf
         std::string address = std::string( "127.0.0.1:" ) +
-                              lexical_cast<std::string>( port+1 );
+                              lexical_cast<std::string>( port + 1 );
         zeq::connection::Broker broker( address, subscriber );
 
         for( size_t i = 0; i < 10; ++i )
