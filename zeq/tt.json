@@ -1,0 +1,32 @@
+{
+    "id": "livre",
+    "command_line": "livre",
+    "process_rest_parameters_format": "--userest --resthost ${REST_HOSTNAME} --restport ${REST_PORT}",
+    "scheduler_rest_parameters_format":
+    "--userest --resthost ${REST_HOSTNAME} --restport ${REST_PORT}",
+    "graceful_exit": true
+}
+
+{
+    "restNames": [
+        "testName01",
+        "testName02",
+        "testName03"
+    ],
+    "eventHighs": [
+        0,
+        0,
+        0
+    ],
+    "eventLows": [
+        1,
+        2,
+        3
+    ],
+    "eventDirections": "AAEC",
+    "schemas": [
+        "testSchema01",
+        "testSchema02",
+        "testSchema03"
+    ]
+}

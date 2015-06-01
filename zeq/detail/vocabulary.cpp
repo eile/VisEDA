@@ -8,7 +8,6 @@
 #include "../eventDescriptor.h"
 #include "../vocabulary.h"
 
-#include <zeq/echo_generated.h>
 #include <zeq/request_generated.h>
 #include <zeq/vocabulary_generated.h>
 
@@ -120,23 +119,6 @@ uint128_t deserializeRequest( const ::zeq::Event& event )
 {
     auto data = GetRequest( event.getData( ));
     return uint128_t( data->eventHigh(), data->eventLow());
-}
-
-zeq::Event serializeEcho( const std::string& msg )
-{
-    zeq::Event event( ::zeq::vocabulary::EVENT_ECHO );
-
-    flatbuffers::FlatBufferBuilder& fbb = event.getFBB();
-    EchoBuilder builder( fbb );
-    builder.add_message( fbb.CreateString( msg ));
-    fbb.Finish( builder.Finish( ));
-    return event;
-}
-
-std::string deserializeEcho( const zeq::Event& event )
-{
-    auto data = GetEcho( event.getData( ));
-    return data->message()->c_str();
 }
 
 zeq::Event serializeJSON( const uint128_t& type, const std::string& json )

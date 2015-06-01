@@ -34,8 +34,8 @@ public:
     void run()
     {
         zeq::Subscriber subscriber( test::buildURI( "foo", "127.0.0.1", port ));
-        BOOST_CHECK( subscriber.registerHandler( zeq::vocabulary::EVENT_ECHO,
-                       std::bind( &test::onEchoEvent, std::placeholders::_1 )));
+        test::EchoIn echo;
+        BOOST_CHECK( subscriber.subscribe( echo ));
 
         // Using the connection broker in place of zeroconf
         BrokerPtr broker( createBroker( subscriber ));
@@ -52,7 +52,12 @@ public:
         for( size_t i = 0; i < 100 && !received ; ++i )
         {
             if( subscriber.receive( 100 ))
+            {
                 received = true;
+                const test::EchoOut expected;
+                BOOST_CHECK_EQUAL( expected.getMessageString(),
+                                   echo.getMessageString( ));
+            }
         }
     }
 
@@ -86,10 +91,10 @@ BOOST_AUTO_TEST_CASE(test_broker)
     zeq::Publisher publisher( test::buildURI( "bar", "*", port ));
     BOOST_CHECK( zeq::connection::Service::subscribe( brokerAddress,
                                                       publisher ));
+    const test::EchoOut echo;
     for( size_t i = 0; i < 100 && !subscriber.received; ++i )
     {
-        BOOST_CHECK( publisher.publish(
-                         zeq::vocabulary::serializeEcho( test::echoMessage )));
+        BOOST_CHECK( publisher.publish( echo ));
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ));
     }
 
@@ -140,10 +145,10 @@ BOOST_AUTO_TEST_CASE(test_named_broker)
     BOOST_CHECK( zeq::connection::Service::subscribe(
                      "127.0.0.1", "zeq::connection::test_named_broker",
                      publisher ));
+    const test::EchoOut echo;
     for( size_t i = 0; i < 100 && !subscriber1.received; ++i )
     {
-        BOOST_CHECK( publisher.publish(
-                         zeq::vocabulary::serializeEcho( test::echoMessage )));
+        BOOST_CHECK( publisher.publish( echo ));
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ));
     }
 

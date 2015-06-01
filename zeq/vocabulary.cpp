@@ -35,16 +35,6 @@ uint128_t deserializeRequest( const Event& event )
     return detail::deserializeRequest( event );
 }
 
-Event serializeEcho( const std::string& message )
-{
-    return detail::serializeEcho( message );
-}
-
-std::string deserializeEcho( const Event& event )
-{
-    return detail::deserializeEcho( event );
-}
-
 Event serializeJSON( const uint128_t& type, const std::string& json )
 {
     return detail::serializeJSON( type, json );

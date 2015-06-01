@@ -27,9 +27,6 @@ namespace vocabulary
 
 /** @name Builtin Events */
 //@{
-ZEQ_API Event serializeEcho( const std::string& message );
-ZEQ_API std::string deserializeEcho( const Event& event );
-
 /**
  * Serialize the given vocabulary into an Event of type EVENT_VOCABULARY.
  * @param vocabulary the vocabulary ( a vector of EventDescriptors ).
@@ -114,7 +111,6 @@ ZEQ_API std::string deserializeJSON( const Event& event );
 }
 
 // must be after the declaration of registerEvent()
-#include <zeq/echo_zeq_generated.h>
 #include <zeq/exit_zeq_generated.h>
 #include <zeq/heartbeat_zeq_generated.h>
 #include <zeq/request_zeq_generated.h>

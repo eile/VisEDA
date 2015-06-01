@@ -6,6 +6,7 @@
  */
 
 #include <zeq/detail/port.h>
+#include <zeq/echo.h>
 #include <zeq/zeq.h>
 
 #include <servus/uri.h>
@@ -46,14 +47,26 @@ servus::URI buildURI( const std::string& schema,
     return servus::URI( uri.str( ));
 }
 
-const std::string echoMessage( "echo_event" );
-
-void onEchoEvent( const zeq::Event& event )
+class EchoOut : public zeq::vocabulary::Echo
 {
-    BOOST_CHECK( event.getType() == zeq::vocabulary::EVENT_ECHO );
-    const std::string message = zeq::vocabulary::deserializeEcho( event );
-    BOOST_CHECK_EQUAL( echoMessage, message );
-}
+public:
+    EchoOut() { setMessage( "So long, and thanks for all the fish!" ); }
+};
+
+class EchoIn : public zeq::vocabulary::Echo
+{
+    void notifyUpdated() final
+    {
+        BOOST_CHECK_EQUAL( getMessageString(),
+                           "So long, and thanks for all the fish!" );
+        gotData = true;
+    }
+
+public:
+    bool gotData;
+
+    EchoIn() : gotData( false ) {}
+};
 
 void onExitEvent( const zeq::Event& event )
 {

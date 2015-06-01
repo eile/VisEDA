@@ -5,7 +5,7 @@ namespace zeq.hbp;
 
 table LookupTable1D
 {
-  lut:[ubyte];
+  lut:[ubyte:1024];
 }
 
 root_type LookupTable1D;

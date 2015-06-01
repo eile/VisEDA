@@ -11,6 +11,7 @@
 #include "detail/byteswap.h"
 
 #include <servus/servus.h>
+#include <zerobuf/Zerobuf.h>
 
 #include <zmq.h>
 #include <map>
@@ -86,6 +87,47 @@ public:
         zmq_msg_t msg;
         zmq_msg_init_size( &msg, event.getSize( ));
         memcpy( zmq_msg_data(&msg), event.getData(), event.getSize( ));
+        ret = zmq_msg_send( &msg, _publisher, 0 );
+        zmq_msg_close( &msg );
+        if( ret  == -1 )
+        {
+            ZEQWARN << "Cannot publish message data, got "
+                    << zmq_strerror( zmq_errno( )) << std::endl;
+            return false;
+        }
+        return true;
+    }
+
+    bool publish( const zerobuf::Zerobuf& zerobuf )
+    {
+        // TODO: Save type in zerobuf and transmit in one message
+#ifdef ZEQ_LITTLEENDIAN
+        const uint128_t& type = zerobuf.getZerobufType();
+#else
+        uint128_t type = zerobuf.getZerobufType();
+        detail::byteswap( type ); // convert to little endian wire protocol
+#endif
+        const void* data = zerobuf.getZerobufData();
+
+        zmq_msg_t msgHeader;
+        zmq_msg_init_size( &msgHeader, sizeof( type ));
+        memcpy( zmq_msg_data( &msgHeader ), &type, sizeof( type ));
+        int ret = zmq_msg_send( &msgHeader, _publisher,
+                                data ? ZMQ_SNDMORE : 0 );
+        zmq_msg_close( &msgHeader );
+        if( ret == -1 )
+        {
+            ZEQWARN << "Cannot publish message header, got "
+                   << zmq_strerror( zmq_errno( )) << std::endl;
+            return false;
+        }
+
+        if( !data )
+            return true;
+
+        zmq_msg_t msg;
+        zmq_msg_init_size( &msg, zerobuf.getZerobufSize( ));
+        ::memcpy( zmq_msg_data(&msg), data, zerobuf.getZerobufSize( ));
         ret = zmq_msg_send( &msg, _publisher, 0 );
         zmq_msg_close( &msg );
         if( ret  == -1 )
@@ -201,6 +243,11 @@ Publisher::~Publisher()
 bool Publisher::publish( const Event& event )
 {
     return _impl->publish( event );
+}
+
+bool Publisher::publish( const zerobuf::Zerobuf& zerobuf )
+{
+    return _impl->publish( zerobuf );
 }
 
 std::string Publisher::getAddress() const

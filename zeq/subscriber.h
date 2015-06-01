@@ -8,7 +8,7 @@
 #define ZEQ_SUBSCRIBER_H
 
 #include <zeq/receiver.h> // base class
-
+#include <zerobuf/types.h>
 #include <vector>
 
 namespace zeq
@@ -72,6 +72,9 @@ public:
      * @return true if callback could be deregistered
      */
     ZEQ_API bool deregisterHandler( const uint128_t& event );
+
+    ZEQ_API bool subscribe( zerobuf::Zerobuf& zerobuf );
+    ZEQ_API bool unsubscribe( const zerobuf::Zerobuf& zerobuf );
 
 private:
     detail::Subscriber* const _impl;

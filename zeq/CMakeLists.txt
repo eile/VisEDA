@@ -1,10 +1,16 @@
 # Copyright (c) HBP 2014-2015 Daniel.Nachbaur@epfl.ch
-# All rights reserved. Do not distribute without further notice.
 
 source_group(\\ FILES CMakeLists.txt)
 
-flatbuffers_generate_c_headers(ZEQ_FBS
+zerobuf_generate_cxx(ZEQ_ZEROBUF ${CMAKE_CURRENT_SOURCE_DIR}
   detail/echo.fbs
+  detail/exit.fbs
+  detail/heartbeat.fbs
+  detail/request.fbs
+  detail/dictionary.fbs
+  )
+
+flatbuffers_generate_c_headers(ZEQ_FBS
   detail/exit.fbs
   detail/heartbeat.fbs
   detail/request.fbs
@@ -16,6 +22,7 @@ list(APPEND CPPCHECK_EXTRA_ARGS
 set(ZEQ_PUBLIC_HEADERS
   ${COMMON_INCLUDES}
   ${ZEQ_FBS_ZEQ_OUTPUTS}
+  ${ZEQ_ZEROBUF_HEADERS}
   connection/broker.h
   connection/service.h
   event.h
@@ -37,6 +44,7 @@ set(ZEQ_HEADERS
 
 set(ZEQ_SOURCES
   ${COMMON_SOURCES}
+  ${ZEQ_ZEROBUF_SOURCES}
   connection/broker.cpp
   connection/service.cpp
   detail/port.cpp
@@ -48,7 +56,8 @@ set(ZEQ_SOURCES
   subscriber.cpp
   vocabulary.cpp)
 
-set(ZEQ_LINK_LIBRARIES ${LIBZMQ_LIBRARIES} ${FLATBUFFERS_LIBRARY} ${SERVUS_LIBRARIES})
+set(ZEQ_LINK_LIBRARIES zerobuf
+  ${LIBZMQ_LIBRARIES} ${FLATBUFFERS_LIBRARY} ${SERVUS_LIBRARIES})
 if(MSVC)
   list(APPEND ZEQ_LINK_LIBRARIES Ws2_32)
 endif()

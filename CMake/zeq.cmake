@@ -6,6 +6,7 @@ set(ZEQ_DEPENDS hbpvis REQUIRED libzmq FlatBuffers Servus Boost)
 set(ZEQ_OPTIONAL ON)
 set(ZEQ_BOOST_COMPONENTS "unit_test_framework")
 set(ZEQ_DEB_DEPENDS libboost-test-dev)
+set(ZEQ_PORT_DEPENDS py-parsing)
 
 if(CI_BUILD_COMMIT)
   set(ZEQ_REPO_TAG ${CI_BUILD_COMMIT})

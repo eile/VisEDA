@@ -1,12 +1,12 @@
-DirectBuffer
-============
+ZeroBuf
+=======
 
 [TOC]
 
 # Overview
 
-DirectBuffer is intended to be a replacement for FlatBuffers, resolving
-the following shortcomings:
+ZeroBuf is a replacement for FlatBuffers, resolving the following
+shortcomings:
 
 * Direct get and set functionality on the defined data members
 * A single, in-memory buffer storing all data members, which is directly
@@ -23,13 +23,19 @@ the following shortcomings:
 
 # Implementation and Data Layout
 
-* Header in little endian: endianness (1b), version (3b)
+* Header in producer endianness: version (4b)
 * Data UUID (16b)
 * fixed-elem PODs: stored in-order at start of array
-* static arrays: size (8b) + data padded to next 4b in place
+* static arrays: data in place
 * dynamic arrays/std::vector, std::string:
-** offset (8b), size (8b) stored in place
+** offset (8b), size (8b) stored at the beginning (optimal alignment)
 ** data at offset after all items at 4b boundary
-* arrays: returned as ptr, iter, copied std::vector
+** returned as ptr, iter, copied std::vector
 * getter/setter generated with hard-coded offsets
+* Nested classes are handled in the same way as dynamic arrays
 * saved in an atomic ptr for concurrent reallocs
+
+# Extensions to flatbuffers grammar
+
+* arrays can have an optional fixed size specified as part of the type,
+  e.g., ```matrix:[float:16]``` for a 16 value float array

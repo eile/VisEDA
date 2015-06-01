@@ -7,11 +7,12 @@
 #define BOOST_TEST_MODULE hbp_serialization
 
 #include <zeq/hbp/vocabulary.h>
+#include <zeq/hbp/lookupTable1D.h>
 #include <zeq/zeq.h>
 
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE( test_cameraEvent )
+BOOST_AUTO_TEST_CASE( cameraEvent )
 {
     const std::vector< float > camera( 16, 42 );
     const zeq::Event& event = zeq::hbp::serializeCamera( camera );
@@ -21,7 +22,7 @@ BOOST_AUTO_TEST_CASE( test_cameraEvent )
                                    deserialized.begin(), deserialized.end( ));
 }
 
-BOOST_AUTO_TEST_CASE( test_selectionsEvent )
+BOOST_AUTO_TEST_CASE( selectionsEvent )
 {
     unsigned int ids[] = {16,2,77,29};
     const std::vector< unsigned int > selection(
@@ -35,7 +36,7 @@ BOOST_AUTO_TEST_CASE( test_selectionsEvent )
         deserializedSelection.begin(), deserializedSelection.end( ));
 }
 
-BOOST_AUTO_TEST_CASE( test_toggleRequestEvent )
+BOOST_AUTO_TEST_CASE( toggleRequestEvent )
 {
     unsigned int ids[] = {16,2,77,29};
     const std::vector< unsigned int > selection(
@@ -49,17 +50,18 @@ BOOST_AUTO_TEST_CASE( test_toggleRequestEvent )
         deserialized_toggleRequest.begin(), deserialized_toggleRequest.end( ));
 }
 
-BOOST_AUTO_TEST_CASE( test_lookupTable1D )
+BOOST_AUTO_TEST_CASE( lookupTable1D )
 {
-    const std::vector< uint8_t > lut( 1024 );
-    const zeq::Event& lookupTableEvent = zeq::hbp::serializeLookupTable1D( lut);
-    const std::vector< uint8_t >& deserializedLut =
-            zeq::hbp::deserializeLookupTable1D( lookupTableEvent );
+    zeq::hbp::LookupTable1D lut;
+    const std::vector< uint8_t > dataIn( 1024, 42 );
+    lut.setLut( dataIn );
+
+    const std::vector< uint8_t >& dataOut = lut.getLutVector();
     BOOST_CHECK_EQUAL_COLLECTIONS(
-        lut.begin(), lut.end(), deserializedLut.begin(), deserializedLut.end());
+        dataIn.begin(), dataIn.end(), dataOut.begin(), dataOut.end());
 }
 
-BOOST_AUTO_TEST_CASE( test_imageJPEGEvent )
+BOOST_AUTO_TEST_CASE( imageJPEGEvent )
 {
     const size_t size = 24;
     const uint8_t imageJPEGData[ size ] = { 13, 11, 17, 19, 34, 73, 25, 24, 36,

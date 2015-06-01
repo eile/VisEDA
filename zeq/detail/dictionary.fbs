@@ -1,0 +1,18 @@
+// Copyright (c) 2015, Human Brain Project
+//                     Grigori Chevtchenko <grigori.chevtchenko@epfl.ch>
+
+namespace zeq.vocabulary;
+
+enum Direction : ubyte { Subscriber, Publisher, Both }
+
+//A struct containing restNames, eventHighs, eventLows, schemas, eventDirections
+//would be more clear but flatbuffers does not support strings in structures.
+table Dictionary
+{
+  restNames:[string];
+  events:[uint128_t];
+  directions:[Direction];
+  schemas:[string];
+}
+
+root_type Dictionary;
