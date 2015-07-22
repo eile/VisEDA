@@ -49,18 +49,18 @@ uint8_t* NonMovingBaseAllocator::updateAllocation( const size_t index,
         return getData() + oldOffset;
     }
 
-    if( oldOffset >= _staticSize ) // Check for space in current place
+    if( oldOffset != 0 ) // Check for space in current place
     {
-        uint64_t nextUsed = getSize();
+        uint64_t nextOffset = getSize();
 
         for( size_t i = 0; i < _numDynamic; ++i )
         {
             const uint64_t offset = _getOffset( i );
-            if( offset >= _staticSize && offset > oldOffset )
-                nextUsed = std::min( nextUsed, oldOffset );
+            if( offset != 0 && offset > oldOffset )
+                nextOffset = std::min( nextOffset, offset );
         }
 
-        if( oldOffset + newSize < nextUsed ) // enough space, update and return
+        if( oldOffset + newSize < nextOffset ) // enough space, update, return
         {
             oldSize = newSize;
             return getData() + oldOffset;

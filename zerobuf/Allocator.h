@@ -28,6 +28,7 @@ public:
     ZEQ_API virtual size_t getSize() const = 0;
     ZEQ_API virtual void copyBuffer( const void* data, size_t size ) = 0;
 
+    /** Update allocation of the dynamic elem #index to have newSize bytes. Updates the offset and size fields in the static section as needed. Does not copy the old data to the new location. @return the pointer to the elem at the new place. */
     ZEQ_API virtual uint8_t* updateAllocation( size_t index,
                                                size_t newSize ) = 0;
 
@@ -63,6 +64,5 @@ protected:
         { return getItem< uint64_t >( 4 + 8 + i * 16 ); }
 };
 }
-
 
 #endif
