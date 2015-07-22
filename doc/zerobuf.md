@@ -28,9 +28,9 @@ shortcomings:
 * fixed-elem PODs: stored in-order at start of array
 * static arrays: data in place
 * dynamic arrays/std::vector, std::string:
-** offset (8b), size (8b) stored at the beginning (optimal alignment)
+** offset (8b), size (8b) stored in place
 ** data at offset after all items at 4b boundary
-** returned as ptr, iter, copied std::vector
+* arrays: returned as ptr, iter, copied std::vector
 * getter/setter generated with hard-coded offsets
 * Nested classes are handled in the same way as dynamic arrays
 * saved in an atomic ptr for concurrent reallocs

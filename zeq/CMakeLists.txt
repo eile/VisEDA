@@ -20,7 +20,6 @@ list(APPEND CPPCHECK_EXTRA_ARGS
   --suppress=*:${CMAKE_CURRENT_BINARY_DIR}/*_generated.h)
 
 set(ZEQ_PUBLIC_HEADERS
-  ${COMMON_INCLUDES}
   ${ZEQ_FBS_ZEQ_OUTPUTS}
   ${ZEQ_ZEROBUF_HEADERS}
   connection/broker.h
@@ -43,8 +42,6 @@ set(ZEQ_HEADERS
   detail/vocabulary.h)
 
 set(ZEQ_SOURCES
-  ${COMMON_SOURCES}
-  ${ZEQ_ZEROBUF_SOURCES}
   connection/broker.cpp
   connection/service.cpp
   detail/port.cpp
@@ -56,7 +53,7 @@ set(ZEQ_SOURCES
   subscriber.cpp
   vocabulary.cpp)
 
-set(ZEQ_LINK_LIBRARIES zerobuf
+set(ZEQ_LINK_LIBRARIES zerobuf ${CMAKE_THREAD_LIBS_INIT}
   ${LIBZMQ_LIBRARIES} ${FLATBUFFERS_LIBRARY} ${SERVUS_LIBRARIES})
 if(MSVC)
   list(APPEND ZEQ_LINK_LIBRARIES Ws2_32)

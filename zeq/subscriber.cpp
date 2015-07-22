@@ -46,7 +46,12 @@ public:
         else
         {
             const std::string& zmqURI = buildZmqURI( uri );
-            addConnection( context, zmqURI );
+            if( !addConnection( context, zmqURI ))
+            {
+                ZEQTHROW( std::runtime_error(
+                              "Cannot connect subscriber to " + zmqURI + ": " +
+                               zmq_strerror( zmq_errno( ))));
+            }
         }
     }
 
@@ -54,7 +59,7 @@ public:
     {
         for( const auto& socket : _subscribers )
         {
-            if ( socket.second )
+            if( socket.second )
                 zmq_close( socket.second );
         }
         if( _service.isBrowsing( ))
@@ -114,7 +119,7 @@ public:
 
         uint128_t type;
         memcpy( &type, zmq_msg_data( &msg ), sizeof(type) );
-#ifndef ZEQ_LITTLEENDIAN
+#ifndef COMMON_LITTLEENDIAN
         detail::byteswap( type ); // convert from little endian wire
 #endif
         const bool payload = zmq_msg_more( &msg );
@@ -176,21 +181,25 @@ public:
 
             // New subscription
             if( _subscribers.count( zmqURI ) == 0 )
-                addConnection( context, zmqURI );
+            {
+                if( !addConnection( context, zmqURI ))
+                {
+                    ZEQINFO << "Cannot connect subscriber to " << zmqURI << ": "
+                            << zmq_strerror( zmq_errno( )) << std::endl;
+                }
+            }
         }
     }
 
-    void addConnection( void* context, const std::string& zmqURI )
+    bool addConnection( void* context, const std::string& zmqURI )
     {
         _subscribers[zmqURI] = zmq_socket( context, ZMQ_SUB );
 
         if( zmq_connect( _subscribers[zmqURI], zmqURI.c_str( )) == -1 )
         {
             zmq_close( _subscribers[zmqURI] );
-            _subscribers.erase( zmqURI );
-            ZEQTHROW( std::runtime_error(
-                          "Cannot connect subscriber to " + zmqURI + ": " +
-                          zmq_strerror( zmq_errno( ))));
+            _subscribers[zmqURI] = 0; // keep empty entry, unconnectable peer
+            return false;
         }
 
         // Add existing subscriptions to socket
@@ -220,6 +229,7 @@ public:
         entry.events = ZMQ_POLLIN;
         _entries.push_back( entry );
         ZEQINFO << "Subscribed to " << zmqURI << std::endl;
+        return true;
     }
 
 private:
@@ -244,9 +254,11 @@ private:
 
     void _subscribe( const uint128_t& event )
     {
+        // Add subscription to existing sockets
         for( const auto& socket : _subscribers )
         {
-            if( zmq_setsockopt( socket.second, ZMQ_SUBSCRIBE,
+            if( socket.second &&
+                zmq_setsockopt( socket.second, ZMQ_SUBSCRIBE,
                                 &event, sizeof( event )) == -1 )
             {
                 throw std::runtime_error(
@@ -260,7 +272,8 @@ private:
     {
         for( const auto& socket : _subscribers )
         {
-            if( zmq_setsockopt( socket.second, ZMQ_UNSUBSCRIBE,
+            if( socket.second &&
+                zmq_setsockopt( socket.second, ZMQ_UNSUBSCRIBE,
                                 &event, sizeof( event )) == -1 )
             {
                 throw std::runtime_error(
