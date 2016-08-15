@@ -95,10 +95,21 @@ public:
         }
     }
 
-    void test( const std::string& request, const std::string& expected,
-               const int line )
+    void test( std::string request, const std::string& expected, const int line,
+               const unsigned nMessages = 1 )
     {
-        sendRequest( request );
+        const size_t requestSize = request.size() / nMessages;
+        for( unsigned i = 1; i <= nMessages; ++i )
+        {
+            if( i == nMessages )
+                sendRequest( request );
+            else
+            {
+                sendRequest( request.substr( 0, requestSize ));
+                request = request.substr( requestSize );
+                std::this_thread::sleep_for( std::chrono::milliseconds( 100 ));
+            }
+        }
 
         std::string response;
         while( response.size() < expected.size( ))
@@ -354,15 +365,42 @@ BOOST_AUTO_TEST_CASE(put_serializable)
     thread.join();
 }
 
+
+BOOST_AUTO_TEST_CASE(issue175)
+{
+    Foo foo;
+    foo.registerDeserializedCallback( [&]{ foo.setNotified(); });
+
+    zeroeq::http::Server server;
+    server.subscribe( foo );
+
+    bool running = true;
+    std::thread thread( [&]() { while( running ) server.receive( 100 ); });
+
+    Client client( server.getURI( ));
+    client.test( std::string( "PUT /test/Foo HTTP/1.0\r\n" +
+                              cors_headers +
+                              "Content-Length: " ) +
+                 std::to_string( jsonPut.length( )) + "\r\n\r\n" + jsonPut,
+                 std::string( "HTTP/1.0 200 OK\r\n" +
+                              cors_headers +
+                              "Content-Length: 0\r\n\r\n" ),
+                 __LINE__, 5 );
+    BOOST_CHECK( foo.getNotified( ));
+
+    running = false;
+    thread.join();
+}
+
 BOOST_AUTO_TEST_CASE(put_event)
 {
     bool running = true;
     zeroeq::http::Server server;
 
     bool receivedEmpty = false;
-    server.subscribe( "empty", zeroeq::PUTFunc 
+    server.subscribe( "empty", zeroeq::PUTFunc
                                ([&]() { receivedEmpty = true; return true; } ));
-    server.subscribe( "foo", zeroeq::PUTPayloadFunc 
+    server.subscribe( "foo", zeroeq::PUTPayloadFunc
                              ([&]( const std::string& received )
                              { return jsonPut == received; } ));
 
