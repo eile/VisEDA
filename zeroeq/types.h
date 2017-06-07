@@ -51,6 +51,9 @@ using EventFunc = std::function<void()>;
 /** Callback for receival of subscribed event w/ payload. */
 using EventPayloadFunc = std::function<void(const void*, size_t)>;
 
+/** Callback for the reply of a Client::request(). */
+using ReplyFunc = std::function<void(const void*, size_t)>;
+
 #ifdef WIN32
 typedef SOCKET SocketDescriptor;
 #else
