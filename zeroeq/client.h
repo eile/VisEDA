@@ -135,5 +135,3 @@ private:
     void addConnection(const std::string& uri) final;
 };
 }
-
-#endif

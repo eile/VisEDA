@@ -4,6 +4,7 @@ list(APPEND CPPCHECK_EXTRA_ARGS
   --suppress=*:${CMAKE_CURRENT_BINARY_DIR}/*_generated.h)
 
 set(ZEROEQ_PUBLIC_HEADERS
+  client.h
   connection/broker.h
   connection/service.h
   log.h
@@ -11,6 +12,7 @@ set(ZEROEQ_PUBLIC_HEADERS
   publisher.h
   receiver.h
   sender.h
+  server.h
   subscriber.h
   types.h
   uri.h)

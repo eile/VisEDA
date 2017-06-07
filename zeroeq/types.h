@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <memory>
+#include <servus/serializable.h>
 #include <servus/types.h>
 #include <servus/uint128_t.h>
 #include <zeroeq/defines.h>
@@ -53,6 +54,11 @@ using EventPayloadFunc = std::function<void(const void*, size_t)>;
 
 /** Callback for the reply of a Client::request(). */
 using ReplyFunc = std::function<void(const void*, size_t)>;
+
+/** Callback for serving a Client::request() in Server::handle(). */
+using HandleFunc =
+    std::function<servus::Serializable::Data(const uint128_t&, const void*,
+                                             size_t)>;
 
 #ifdef WIN32
 typedef SOCKET SocketDescriptor;
