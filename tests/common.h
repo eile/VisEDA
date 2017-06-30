@@ -77,6 +77,11 @@ private:
     std::string _message;
 };
 
+std::ostream& operator<<(std::ostream& os, const Echo& echo)
+{
+    return os << echo.getMessage();
+}
+
 class Empty : public servus::Serializable
 {
 public:

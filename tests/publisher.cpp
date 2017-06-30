@@ -1,5 +1,5 @@
 
-/* Copyright (c) 2015-2016, Human Brain Project
+/* Copyright (c) 2015-2017, Human Brain Project
  *                          Daniel Nachbaur <daniel.nachbaur@epfl.ch>
  *                          Stefan.Eilemann@epfl.ch
  *                          Juan Hernando <jhernando@fi.upm.es>
@@ -8,7 +8,7 @@
 #define BOOST_TEST_MODULE zeroeq_publisher
 
 #include "common.h"
-#include <zeroeq/detail/broker.h>
+#include <zeroeq/detail/common.h>
 #include <zeroeq/detail/constants.h>
 #include <zeroeq/detail/sender.h>
 

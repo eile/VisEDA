@@ -17,14 +17,12 @@
 
 namespace zeroeq
 {
-namespace detail
-{
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
 using std::chrono::milliseconds;
 using std::chrono::nanoseconds;
 
-class Receiver
+class Receiver::Impl
 {
 public:
     void add(::zeroeq::Receiver* receiver) { _shared.push_back(receiver); }
@@ -96,7 +94,7 @@ private:
         bool hadData = false;
         do
         {
-            std::vector<Socket> sockets;
+            std::vector<detail::Socket> sockets;
             std::deque<size_t> intervals;
             for (::zeroeq::Receiver* receiver : _shared)
             {
@@ -134,7 +132,7 @@ private:
                 haveData = false;
                 timeout = 0;
 
-                for (Socket& socket : sockets)
+                for (auto& socket : sockets)
                 {
                     while (interval == 0 || interval-- == 0)
                     {
@@ -160,10 +158,9 @@ private:
         return hadData;
     }
 };
-}
 
 Receiver::Receiver()
-    : _impl(new detail::Receiver)
+    : _impl(new Receiver::Impl)
 {
     _impl->add(this);
 }

@@ -22,6 +22,11 @@ namespace zeroeq
  * A receive on any instance of a shared group will work on all instance
  * and call the registered handlers.
  *
+ * The session of a Client-Server setup is typically semantically different from
+ * the session of a Publisher-Subscriber setup: In the former, it identifies a
+ * service provided, i.e., the type of requests served. In the latter, it
+ * identifies an interest scope, e.g., all the applications of a given user.
+ *
  * Not thread safe.
  *
  * Example: @include tests/reqRep.cpp
@@ -87,10 +92,10 @@ public:
      *
      * @sa Client( const URIs& )
      *
-     * @param uri server URIs in the format *|host|IP|IF:port
+     * @param uris server URIs in the format *|host|IP|IF:port
      * @param shared another receiver to share data reception with
      */
-    ZEROEQ_API Client(const URIs& uri, Receiver& shared);
+    ZEROEQ_API Client(const URIs& uris, Receiver& shared);
 
     /** Destroy this client. */
     ZEROEQ_API ~Client();
@@ -99,13 +104,14 @@ public:
      * Request the execution of the given data on a connected Server.
      *
      * The reply function will be executed during receive(). May block of when
-     * all servers are overloaded or no server is connected.
+     * all servers arwe overloaded or no server is connected.
      *
      * @param request the request identifier and payload
      * @param func the function to execute for the reply
+     * @return true if the request was sent, false on error
      */
-    ZEROEQ_API void request(const servus::Serializable& request,
-                            ReplyFunc& func);
+    ZEROEQ_API bool request(const servus::Serializable& request,
+                            const ReplyFunc& func);
 
     /**
      * Request the execution of the given data on a connected Server.
@@ -118,8 +124,8 @@ public:
      * @param size the size of the payload data
      * @param func the function to execute for the reply
      */
-    ZEROEQ_API void request(const uint128_t& request, const void* data,
-                            size_t size, ReplyFunc& func);
+    ZEROEQ_API bool request(const uint128_t& request, const void* data,
+                            size_t size, const ReplyFunc& func);
 
     /** @return the session name that is used for filtering. */
     ZEROEQ_API const std::string& getSession() const;
@@ -130,7 +136,7 @@ private:
 
     // Receiver API
     void addSockets(std::vector<detail::Socket>& entries) final;
-    void process(detail::Socket& socket, uint32_t timeout) final;
+    bool process(detail::Socket& socket) final;
     void update() final;
     void addConnection(const std::string& uri) final;
 };

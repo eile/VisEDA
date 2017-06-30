@@ -22,6 +22,8 @@
 #include <map>
 #include <thread>
 
+static const float TIMEOUT = 100.f; // milliseconds
+
 namespace
 {
 namespace http = boost::network::http;
@@ -333,16 +335,14 @@ BOOST_AUTO_TEST_CASE(construction_argv_host_port)
     const char* argv[] = {app, "--zeroeq-http-server", "127.0.0.1:0"};
     const int argc = sizeof(argv) / sizeof(char*);
 
-    std::unique_ptr<zeroeq::http::Server> server1 =
-        zeroeq::http::Server::parse(argc, argv);
+    auto server1 = zeroeq::http::Server::parse(argc, argv);
 
     BOOST_REQUIRE(server1);
     BOOST_CHECK_EQUAL(server1->getURI().getHost(), "127.0.0.1");
     BOOST_CHECK_NE(server1->getURI().getPort(), 0);
 
     zeroeq::Subscriber shared;
-    std::unique_ptr<zeroeq::http::Server> server2 =
-        zeroeq::http::Server::parse(argc, argv, shared);
+    auto server2 = zeroeq::http::Server::parse(argc, argv, shared);
 
     BOOST_REQUIRE(server2);
     BOOST_CHECK_EQUAL(server2->getURI().getHost(), "127.0.0.1");
@@ -355,16 +355,14 @@ BOOST_AUTO_TEST_CASE(construction_argv)
     const char* argv[] = {app, "--zeroeq-http-server"};
     const int argc = sizeof(argv) / sizeof(char*);
 
-    std::unique_ptr<zeroeq::http::Server> server1 =
-        zeroeq::http::Server::parse(argc, argv);
+    auto server1 = zeroeq::http::Server::parse(argc, argv);
 
     BOOST_REQUIRE(server1);
     BOOST_CHECK(!server1->getURI().getHost().empty());
     BOOST_CHECK_NE(server1->getURI().getPort(), 0);
 
     zeroeq::Subscriber shared;
-    std::unique_ptr<zeroeq::http::Server> server2 =
-        zeroeq::http::Server::parse(argc, argv, shared);
+    auto server2 = zeroeq::http::Server::parse(argc, argv, shared);
 
     BOOST_CHECK(!server2->getURI().getHost().empty());
     BOOST_CHECK_NE(server2->getURI().getPort(), 0);
@@ -376,15 +374,11 @@ BOOST_AUTO_TEST_CASE(construction_empty_argv)
     const char* argv[] = {app};
     const int argc = sizeof(argv) / sizeof(char*);
 
-    std::unique_ptr<zeroeq::http::Server> server1 =
-        zeroeq::http::Server::parse(argc, argv);
-
+    auto server1 = zeroeq::http::Server::parse(argc, argv);
     BOOST_CHECK(!server1);
 
     zeroeq::Subscriber shared;
-    std::unique_ptr<zeroeq::http::Server> server2 =
-        zeroeq::http::Server::parse(argc, argv, shared);
-
+    auto server2 = zeroeq::http::Server::parse(argc, argv, shared);
     BOOST_CHECK(!server2);
 }
 
@@ -462,7 +456,7 @@ BOOST_AUTO_TEST_CASE(get_serializable)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -490,7 +484,7 @@ BOOST_AUTO_TEST_CASE(get_event)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -521,7 +515,7 @@ BOOST_AUTO_TEST_CASE(shared)
 
     std::thread thread([&]() {
         while (running)
-            subscriber2.receive(100);
+            subscriber2.receive(TIMEOUT);
     });
 
     Client client1(server1.getURI());
@@ -545,7 +539,7 @@ BOOST_AUTO_TEST_CASE(put_serializable)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -577,7 +571,7 @@ BOOST_AUTO_TEST_CASE(put_event)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -605,7 +599,7 @@ BOOST_AUTO_TEST_CASE(post_serializable)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -633,7 +627,7 @@ BOOST_AUTO_TEST_CASE(handle_all)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -674,7 +668,7 @@ BOOST_AUTO_TEST_CASE(handle_root)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -701,7 +695,7 @@ BOOST_AUTO_TEST_CASE(handle_root_path)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -735,7 +729,7 @@ BOOST_AUTO_TEST_CASE(handle_root_and_root_path)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -765,7 +759,7 @@ BOOST_AUTO_TEST_CASE(handle_path)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -840,7 +834,7 @@ BOOST_AUTO_TEST_CASE(handle_headers)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
     Client client(server.getURI());
 
@@ -872,7 +866,7 @@ BOOST_AUTO_TEST_CASE(cors_preflight_request)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -950,7 +944,7 @@ BOOST_AUTO_TEST_CASE(large_get)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -970,7 +964,7 @@ BOOST_AUTO_TEST_CASE(issue157)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     // Close client before receiving request to provoke #157
@@ -994,7 +988,7 @@ BOOST_AUTO_TEST_CASE(urlcasesensitivity)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1015,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(empty_registry)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1038,7 +1032,7 @@ BOOST_AUTO_TEST_CASE(filled_registry)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     const char* registry =
@@ -1065,7 +1059,7 @@ BOOST_AUTO_TEST_CASE(object_schema)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1094,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(event_schema)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1121,7 +1115,7 @@ BOOST_AUTO_TEST_CASE(event_no_schema)
     bool running = true;
     std::thread thread([&] {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1161,7 +1155,7 @@ BOOST_AUTO_TEST_CASE(event_registry_name)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1182,7 +1176,7 @@ BOOST_AUTO_TEST_CASE(event_schema_name)
     bool running = true;
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());
@@ -1207,7 +1201,7 @@ BOOST_AUTO_TEST_CASE(multiple_event_name_for_same_object)
 
     std::thread thread([&]() {
         while (running)
-            server.receive(100);
+            server.receive(TIMEOUT);
     });
 
     Client client(server.getURI());

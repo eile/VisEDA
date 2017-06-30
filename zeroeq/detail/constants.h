@@ -13,6 +13,7 @@
 namespace
 {
 const std::string PUBLISHER_SERVICE("_zeroeq_pub._tcp");
+const std::string SERVER_SERVICE("_zeroeq_rep._tcp");
 
 const std::string KEY_INSTANCE("Instance");
 const std::string KEY_SESSION("Session");

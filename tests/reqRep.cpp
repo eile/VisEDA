@@ -15,224 +15,171 @@
 
 namespace
 {
-static const float TIMEOUT = 100.f; // milliseconds
+static const float TIMEOUT = 1000.f; // milliseconds
 
-void runOnce(zeroeq::Server& server, const test::Echo& expected)
+template <class R>
+bool runOnce(zeroeq::Server& server, const test::Echo& request, const R& reply)
 {
     bool handled = false;
-    server.handle(test::Echo::IDENTIFIER(),
-                  [&](const void* data, const size_t size) {
-                      BOOST_CHECK(data);
-                      BOOST_CHECK(!handled);
+    const auto func = [&](const void* data, const size_t size) {
+        BOOST_CHECK((data && size) || (!data && !size));
+        BOOST_CHECK(!handled);
 
-                      const auto got = test::Echo::create(data, size);
-                      BOOST_CHECK_EQUAL(got, expected);
+        if (data)
+        {
+            test::Echo got;
+            got.fromBinary(data, size);
+            BOOST_CHECK_EQUAL(got, request);
+        }
 
-                      handled = true;
-                      return test::Echo("Jumped over the lazy dog").toBinary();
-                  });
+        handled = true;
+        return zeroeq::ReplyData{R::IDENTIFIER(), reply.toBinary()};
+    };
+
+    server.handle(test::Echo::IDENTIFIER(), func);
+    server.handle(test::Empty::IDENTIFIER(), func);
 
     BOOST_CHECK(!handled);
-    server.receive(TIMEOUT);
-    BOOST_CHECK(handled);
+    BOOST_CHECK(server.receive(TIMEOUT));
+    return handled;
 }
-
-bool running;
-};
 }
 
 BOOST_AUTO_TEST_CASE(serializable)
 {
     test::Echo echo("The quick brown fox");
+    const test::Echo reply("Jumped over the lazy dog");
 
     zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client(zeroeq::URI(server.getURI()));
+    zeroeq::Client client({zeroeq::URI(server.getURI())});
 
-    std::thread thread([&] { runOnce(server, echo); });
+    std::thread thread([&] { BOOST_CHECK(runOnce(server, echo, reply)); });
 
     bool handled = false;
-    client.get(echo.getTypeIdentifier(), [&](const void* data,
-                                             const size_t size) {
+    client.request(echo, [&](const zeroeq::uint128_t& type, const void* data,
+                             const size_t size) {
+        BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
         BOOST_CHECK(data);
         BOOST_CHECK(!handled);
 
-        const auto got = test::Echo::create(data, size);
-        BOOST_CHECK_EQUAL(got.getMessage(), "Jumped over the lazy dog");
+        test::Echo got;
+        got.fromBinary(data, size);
+        BOOST_CHECK_EQUAL(got, reply);
         handled = true;
     });
 
     BOOST_CHECK(!handled);
-    client.receive(TIMEOUT);
+    BOOST_CHECK(client.receive(TIMEOUT));
     BOOST_CHECK(handled);
-}
 
-#if 0
-BOOST_AUTO_TEST_CASE(no_receive)
-{
-    zeroeq::Server server(zeroeq::URI("1.2.3.4:1234"));
-    BOOST_CHECK(!server.receive(100));
-}
-
-BOOST_AUTO_TEST_CASE(subscribe_to_same_session_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Client client(test::buildUniqueSession());
-    BOOST_CHECK_NO_THROW(zeroeq::Server server(client.getSession()));
-}
-
-BOOST_AUTO_TEST_CASE(subscribe_to_different_session_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Client client(test::buildUniqueSession());
-    BOOST_CHECK_NO_THROW(zeroeq::Server server(client.getSession() + "bar"));
-}
-
-BOOST_AUTO_TEST_CASE(no_receive_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Server server(test::buildUniqueSession());
-    BOOST_CHECK(!server.receive(100));
-}
-
-BOOST_AUTO_TEST_CASE(zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Client client(test::buildUniqueSession());
-    zeroeq::Server noServer(client.getSession());
-    zeroeq::detail::Sender::getUUID() =
-        servus::make_UUID(); // different machine
-    zeroeq::Server server(client.getSession());
-
-    BOOST_CHECK(server.subscribe(test::Echo::IDENTIFIER(),
-                                 zeroeq::EventPayloadFunc(&test::onEchoEvent)));
-    BOOST_CHECK(
-        noServer.subscribe(test::Echo::IDENTIFIER(),
-                           zeroeq::EventPayloadFunc(&test::onEchoEvent)));
-
-    bool received = false;
-    for (size_t i = 0; i < 20; ++i)
-    {
-        BOOST_CHECK(client.publish(test::Echo(test::echoMessage)));
-
-        BOOST_CHECK(!noServer.receive(100));
-        if (server.receive(100))
-        {
-            received = true;
-            break;
-        }
-    }
-    BOOST_CHECK(received);
-}
-
-BOOST_AUTO_TEST_CASE(late_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Server server(test::buildUniqueSession());
-    zeroeq::detail::Sender::getUUID() =
-        servus::make_UUID(); // different machine
-    zeroeq::Client client(server.getSession());
-
-    BOOST_CHECK(server.subscribe(test::Echo::IDENTIFIER(),
-                                 zeroeq::EventPayloadFunc(&test::onEchoEvent)));
-    bool received = false;
-    for (size_t i = 0; i < 20; ++i)
-    {
-        BOOST_CHECK(client.publish(test::Echo(test::echoMessage)));
-
-        if (server.receive(100))
-        {
-            received = true;
-            break;
-        }
-    }
-    BOOST_CHECK(received);
-}
-
-BOOST_AUTO_TEST_CASE(empty_event_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Client client(test::buildUniqueSession());
-    zeroeq::detail::Sender::getUUID() =
-        servus::make_UUID(); // different machine
-    zeroeq::Server server(client.getSession());
-
-    BOOST_CHECK(
-        server.subscribe(test::Empty::IDENTIFIER(), zeroeq::EventFunc([] {})));
-
-    bool received = false;
-    for (size_t i = 0; i < 20; ++i)
-    {
-        BOOST_CHECK(client.publish(test::Empty()));
-
-        if (server.receive(100))
-        {
-            received = true;
-            break;
-        }
-    }
-    BOOST_CHECK(received);
-}
-
-namespace
-{
-class Client
-{
-public:
-    Client()
-        : running(false)
-    {
-    }
-
-    void run(const std::string& session)
-    {
-        zeroeq::Client client(session);
-        running = true;
-        size_t i = 0;
-        while (running)
-        {
-            BOOST_CHECK(client.publish(test::Echo(test::echoMessage)));
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            ++i;
-
-            if (i > 300)
-                ZEROEQTHROW(std::runtime_error("Client giving up after 30s"));
-        }
-    }
-
-    bool running;
-};
-}
-
-BOOST_AUTO_TEST_CASE(publish_blocking_receive_zeroconf)
-{
-    if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
-        return;
-
-    zeroeq::Server server(test::buildUniqueSession());
-    zeroeq::detail::Sender::getUUID() =
-        servus::make_UUID(); // different machine
-
-    BOOST_CHECK(server.subscribe(test::Echo::IDENTIFIER(),
-                                 zeroeq::EventPayloadFunc(&test::onEchoEvent)));
-
-    Client client;
-    std::thread thread(std::bind(&Client::run, &client, server.getSession()));
-
-    BOOST_CHECK(server.receive());
-
-    client.running = false;
     thread.join();
 }
-#endif
+
+BOOST_AUTO_TEST_CASE(empty_request_raw)
+{
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    const test::Echo reply("Jumped over the lazy dog");
+
+    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+
+    bool handled = false;
+    client.request(test::Echo::IDENTIFIER(), nullptr, 0,
+                   [&](const zeroeq::uint128_t& type, const void* data,
+                       const size_t size) {
+                       BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
+                       BOOST_CHECK(data);
+                       BOOST_CHECK(!handled);
+
+                       test::Echo got;
+                       got.fromBinary(data, size);
+                       BOOST_CHECK_EQUAL(got, reply);
+                       handled = true;
+                   });
+
+    BOOST_CHECK(!handled);
+    BOOST_CHECK(client.receive(TIMEOUT));
+    BOOST_CHECK(handled);
+
+    thread.join();
+}
+
+BOOST_AUTO_TEST_CASE(empty_request_object)
+{
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    const test::Echo reply("Jumped over the lazy dog");
+
+    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+
+    bool handled = false;
+    client.request(test::Empty(), [&](const zeroeq::uint128_t& type,
+                                      const void* data, const size_t size) {
+        BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
+        BOOST_CHECK(data);
+        BOOST_CHECK(!handled);
+
+        test::Echo got;
+        got.fromBinary(data, size);
+        BOOST_CHECK_EQUAL(got, reply);
+        handled = true;
+    });
+
+    BOOST_CHECK(!handled);
+    BOOST_CHECK(client.receive(TIMEOUT));
+    BOOST_CHECK(handled);
+
+    thread.join();
+}
+
+BOOST_AUTO_TEST_CASE(empty_reqrep)
+{
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    const test::Empty reply;
+
+    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+
+    bool handled = false;
+    client.request(test::Echo::IDENTIFIER(), nullptr, 0,
+                   [&](const zeroeq::uint128_t& type, const void* data,
+                       const size_t size) {
+                       BOOST_CHECK_EQUAL(type, test::Empty::IDENTIFIER());
+                       BOOST_CHECK(!data);
+                       BOOST_CHECK_EQUAL(size, 0);
+                       BOOST_CHECK(!handled);
+                       handled = true;
+                   });
+
+    BOOST_CHECK(!handled);
+    BOOST_CHECK(client.receive(TIMEOUT));
+    BOOST_CHECK(handled);
+
+    thread.join();
+}
+
+BOOST_AUTO_TEST_CASE(unhandled_request)
+{
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    const test::Empty reply;
+
+    std::thread thread([&] { BOOST_CHECK(!runOnce(server, {}, reply)); });
+
+    bool handled = false;
+    client.request(servus::make_UUID(), nullptr, 0,
+                   [&](const zeroeq::uint128_t& type, const void* data,
+                       const size_t size) {
+                       BOOST_CHECK_EQUAL(type, servus::uint128_t());
+                       BOOST_CHECK(!data);
+                       BOOST_CHECK_EQUAL(size, 0);
+                       BOOST_CHECK(!handled);
+                       handled = true;
+                   });
+
+    BOOST_CHECK(!handled);
+    BOOST_CHECK(client.receive(TIMEOUT));
+    BOOST_CHECK(handled);
+
+    thread.join();
+}

@@ -53,12 +53,13 @@ using EventFunc = std::function<void()>;
 using EventPayloadFunc = std::function<void(const void*, size_t)>;
 
 /** Callback for the reply of a Client::request(). */
-using ReplyFunc = std::function<void(const void*, size_t)>;
+using ReplyFunc = std::function<void(const uint128_t&, const void*, size_t)>;
+
+/** Return value of HandleFunc */
+using ReplyData = std::pair<uint128_t, servus::Serializable::Data>;
 
 /** Callback for serving a Client::request() in Server::handle(). */
-using HandleFunc =
-    std::function<servus::Serializable::Data(const uint128_t&, const void*,
-                                             size_t)>;
+using HandleFunc = std::function<ReplyData(const void*, size_t)>;
 
 #ifdef WIN32
 typedef SOCKET SocketDescriptor;
@@ -78,6 +79,10 @@ static const std::string NULL_SESSION = "__null_session";
 namespace detail
 {
 struct Socket;
+}
+namespace zmq
+{
+using SocketPtr = std::shared_ptr<void>;
 }
 }
 

@@ -18,8 +18,8 @@ set(ZEROEQ_PUBLIC_HEADERS
   uri.h)
 
 set(ZEROEQ_HEADERS
-  detail/application.h
-  detail/broker.h
+  detail/browser.h
+  detail/common.h
   detail/constants.h
   detail/context.h
   detail/port.h
@@ -27,6 +27,7 @@ set(ZEROEQ_HEADERS
   detail/socket.h)
 
 set(ZEROEQ_SOURCES
+  client.cpp
   connection/broker.cpp
   connection/service.cpp
   detail/context.cpp
@@ -35,6 +36,7 @@ set(ZEROEQ_SOURCES
   monitor.cpp
   publisher.cpp
   receiver.cpp
+  server.cpp
   subscriber.cpp
   uri.cpp)
 

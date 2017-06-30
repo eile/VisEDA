@@ -16,10 +16,6 @@
 
 namespace zeroeq
 {
-namespace detail
-{
-class Receiver;
-}
 namespace connection
 {
 namespace detail
@@ -71,8 +67,6 @@ public:
     ZEROEQ_API bool receive(const uint32_t timeout = TIMEOUT_INDEFINITE);
 
 protected:
-    friend class detail::Receiver;
-
     /** Add this receiver's sockets to the given list */
     virtual void addSockets(std::vector<detail::Socket>& entries) = 0;
 
@@ -103,7 +97,8 @@ protected:
 private:
     Receiver& operator=(const Receiver&) = delete;
 
-    std::shared_ptr<detail::Receiver> const _impl;
+    class Impl;
+    std::shared_ptr<Impl> const _impl;
 };
 }
 

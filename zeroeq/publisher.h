@@ -138,7 +138,7 @@ private:
     Publisher(const Publisher&) = delete;
     Publisher& operator=(const Publisher&) = delete;
 
-    ZEROEQ_API void* getSocket() final;
+    ZEROEQ_API zmq::SocketPtr getSocket() final;
 };
 }
 

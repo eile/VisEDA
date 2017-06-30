@@ -23,7 +23,7 @@ public:
     void addSockets(std::vector<zeroeq::detail::Socket>& entries)
     {
         zeroeq::detail::Socket entry;
-        entry.socket = _socket;
+        entry.socket = _socket.get();
         entry.events = ZMQ_POLLIN;
         entries.push_back(entry);
     }
@@ -31,7 +31,7 @@ public:
     virtual bool process(void* socket, Monitor& monitor) = 0;
 
 protected:
-    void* _socket;
+    zmq::SocketPtr _socket;
 };
 
 namespace
@@ -44,7 +44,8 @@ public:
         _socket = sender.getSocket();
 
         const int on = 1;
-        if (zmq_setsockopt(_socket, ZMQ_XPUB_VERBOSE, &on, sizeof(on)) == -1)
+        if (zmq_setsockopt(_socket.get(), ZMQ_XPUB_VERBOSE, &on, sizeof(on)) ==
+            -1)
         {
             ZEROEQTHROW(std::runtime_error(
                 std::string("Enabling ZMQ_XPUB_VERBOSE failed: ") +
@@ -54,11 +55,8 @@ public:
 
     ~XPubImpl()
     {
-        if (_socket)
-        {
-            const int off = 0;
-            zmq_setsockopt(_socket, ZMQ_XPUB_VERBOSE, &off, sizeof(off));
-        }
+        const int off = 0;
+        zmq_setsockopt(_socket.get(), ZMQ_XPUB_VERBOSE, &off, sizeof(off));
     }
 
     bool process(void* socket, Monitor& monitor)
@@ -105,7 +103,7 @@ public:
         const auto inproc = std::string("inproc://zeroeq.monitor.") +
                             servus::make_UUID().getString();
 
-        if (::zmq_socket_monitor(sender.getSocket(), inproc.c_str(),
+        if (::zmq_socket_monitor(sender.getSocket().get(), inproc.c_str(),
                                  ZMQ_EVENT_ALL) != 0)
         {
             ZEROEQTHROW(
@@ -113,13 +111,14 @@ public:
                                    zmq_strerror(zmq_errno())));
         }
 
-        _socket = ::zmq_socket(_context.get(), ZMQ_PAIR);
+        _socket.reset(::zmq_socket(_context.get(), ZMQ_PAIR),
+                      [](void* s) { ::zmq_close(s); });
         if (!_socket)
             ZEROEQTHROW(std::runtime_error(
                 std::string("Cannot create inproc socket: ") +
                 zmq_strerror(zmq_errno())));
 
-        if (::zmq_connect(_socket, inproc.c_str()) != 0)
+        if (::zmq_connect(_socket.get(), inproc.c_str()) != 0)
         {
             ZEROEQTHROW(std::runtime_error(
                 std::string("Cannot connect inproc socket: ") +
@@ -127,11 +126,7 @@ public:
         }
     }
 
-    ~SocketImpl()
-    {
-        if (_socket)
-            ::zmq_close(_socket);
-    }
+    ~SocketImpl() {}
 
     bool process(void* socket, Monitor& monitor)
     {
