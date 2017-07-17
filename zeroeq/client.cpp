@@ -128,14 +128,15 @@ private:
     {
         zmq_msg_t msg;
         zmq_msg_init_size(&msg, size);
-        ::memcpy(zmq_msg_data(&msg), data, size);
+        if (data)
+            ::memcpy(zmq_msg_data(&msg), data, size);
         int ret = zmq_msg_send(&msg, _servers.get(), flags);
         zmq_msg_close(&msg);
 
         if (ret != -1)
             return true;
 
-        ZEROEQWARN << "Cannot send request, got " << zmq_strerror(zmq_errno())
+        ZEROEQWARN << "Cannot send request: " << zmq_strerror(zmq_errno())
                    << std::endl;
         return false;
     }
@@ -148,7 +149,7 @@ private:
         zmq_msg_recv(&msg, _servers.get(), 0);
 
         if (zmq_msg_size(&msg) != size)
-            ZEROEQWARN << "Message size mismatch, expected " << size << " got "
+            ZEROEQWARN << "Reply size mismatch, expected " << size << " got "
                        << zmq_msg_size(&msg) << std::endl;
         else if (data)
             ::memcpy(data, zmq_msg_data(&msg), size);

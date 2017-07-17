@@ -97,8 +97,6 @@ protected:
         entry.socket = socket.get();
         entry.events = ZMQ_POLLIN;
         _entries.push_back(entry);
-
-        ZEROEQINFO << "Connected to " << zmqURI << std::endl;
         return true;
     }
 

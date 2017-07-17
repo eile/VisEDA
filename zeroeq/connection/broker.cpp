@@ -47,7 +47,6 @@ public:
     }
 
     ~Broker() {}
-
     void addSockets(std::vector<zeroeq::detail::Socket>& entries)
     {
         assert(socket);

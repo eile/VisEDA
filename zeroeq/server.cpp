@@ -46,9 +46,8 @@ public:
         return true;
     }
 
-    bool process(detail::Socket& s)
+    bool process(detail::Socket&)
     {
-        assert(socket.get() == s.socket);
         uint128_t requestID;
         const bool payload = _recv(&requestID, sizeof(requestID));
 
@@ -104,7 +103,7 @@ private:
         if (ret != -1)
             return true;
 
-        ZEROEQWARN << "Cannot send request, got " << zmq_strerror(zmq_errno())
+        ZEROEQWARN << "Cannot send reply: " << zmq_strerror(zmq_errno())
                    << std::endl;
         return false;
     }
@@ -112,11 +111,12 @@ private:
     /** @return true if more data available */
     bool _recv(void* data, const size_t size)
     {
+        // std::cout << uri.getPort() << ": " << size << std::endl;
         zmq_msg_t msg;
         zmq_msg_init(&msg);
         zmq_msg_recv(&msg, socket.get(), 0);
         if (zmq_msg_size(&msg) != size)
-            ZEROEQWARN << "Message size mismatch, expected " << size << " got "
+            ZEROEQWARN << "Request size mismatch, expected " << size << " got "
                        << zmq_msg_size(&msg) << std::endl;
         else
             memcpy(data, zmq_msg_data(&msg), size);
@@ -180,6 +180,22 @@ Server::~Server()
 {
 }
 
+Server::Server(Server&& from)
+    : Receiver(from)
+    , _impl(std::move(from._impl))
+{
+}
+
+Server& Server::operator=(Server&& from)
+{
+    if (this == &from)
+        return *this;
+
+    Receiver::operator=(std::move(from));
+    _impl = std::move(from._impl);
+    return *this;
+}
+
 const std::string& Server::getSession() const
 {
     return _impl->getSession();
@@ -208,5 +224,10 @@ const URI& Server::getURI() const
 bool Server::handle(const uint128_t& request, const HandleFunc& func)
 {
     return _impl->handle(request, func);
+}
+
+zmq::SocketPtr Server::getSocket()
+{
+    return _impl->socket;
 }
 }

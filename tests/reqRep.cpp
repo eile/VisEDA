@@ -17,19 +17,23 @@ namespace
 {
 static const float TIMEOUT = 1000.f; // milliseconds
 
+// Run from a thread: No BOOST_CHECK macros allowed. throw up instead.
 template <class R>
 bool runOnce(zeroeq::Server& server, const test::Echo& request, const R& reply)
 {
     bool handled = false;
     const auto func = [&](const void* data, const size_t size) {
-        BOOST_CHECK((data && size) || (!data && !size));
-        BOOST_CHECK(!handled);
+        if (!((data && size) || (!data && !size)))
+            throw std::runtime_error("Unexpected handle parameters");
+        if (handled)
+            throw std::runtime_error("Already handled request");
 
         if (data)
         {
             test::Echo got;
             got.fromBinary(data, size);
-            BOOST_CHECK_EQUAL(got, request);
+            if (got != request)
+                throw std::runtime_error("Request does not match expectation");
         }
 
         handled = true;
@@ -39,8 +43,11 @@ bool runOnce(zeroeq::Server& server, const test::Echo& request, const R& reply)
     server.handle(test::Echo::IDENTIFIER(), func);
     server.handle(test::Empty::IDENTIFIER(), func);
 
-    BOOST_CHECK(!handled);
-    BOOST_CHECK(server.receive(TIMEOUT));
+    if (handled)
+        throw std::runtime_error("Already handled a request");
+
+    if (!server.receive(TIMEOUT))
+        throw std::runtime_error("No request handled");
     return handled;
 }
 }
@@ -51,9 +58,11 @@ BOOST_AUTO_TEST_CASE(serializable)
     const test::Echo reply("Jumped over the lazy dog");
 
     zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    zeroeq::Client client({server.getURI()});
+    test::Monitor monitor(server);
 
-    std::thread thread([&] { BOOST_CHECK(runOnce(server, echo, reply)); });
+    bool serverHandled = false;
+    std::thread thread([&] { serverHandled = runOnce(server, echo, reply); });
 
     bool handled = false;
     client.request(echo, [&](const zeroeq::uint128_t& type, const void* data,
@@ -72,16 +81,24 @@ BOOST_AUTO_TEST_CASE(serializable)
     BOOST_CHECK(client.receive(TIMEOUT));
     BOOST_CHECK(handled);
 
+    BOOST_CHECK_EQUAL(monitor.connections, 0);
+    BOOST_CHECK(monitor.receive(TIMEOUT));
+    BOOST_CHECK_EQUAL(monitor.connections, 1);
+
     thread.join();
+    BOOST_CHECK(serverHandled);
 }
 
 BOOST_AUTO_TEST_CASE(empty_request_raw)
 {
-    zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client({zeroeq::URI(server.getURI())});
     const test::Echo reply("Jumped over the lazy dog");
 
-    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client({server.getURI()});
+    test::Monitor monitor(server, client);
+
+    bool serverHandled = false;
+    std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });
 
     bool handled = false;
     client.request(test::Echo::IDENTIFIER(), nullptr, 0,
@@ -98,10 +115,17 @@ BOOST_AUTO_TEST_CASE(empty_request_raw)
                    });
 
     BOOST_CHECK(!handled);
+    BOOST_CHECK_EQUAL(monitor.connections, 0);
     BOOST_CHECK(client.receive(TIMEOUT));
+    if (!handled || monitor.connections == 0)
+    {
+        BOOST_CHECK(client.receive(TIMEOUT));
+    }
+    BOOST_CHECK_EQUAL(monitor.connections, 1);
     BOOST_CHECK(handled);
 
     thread.join();
+    BOOST_CHECK(serverHandled);
 }
 
 BOOST_AUTO_TEST_CASE(empty_request_object)
@@ -111,7 +135,8 @@ BOOST_AUTO_TEST_CASE(empty_request_object)
     zeroeq::Client client({server.getURI()});
     const test::Echo reply("Jumped over the lazy dog");
 
-    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+    bool serverHandled = false;
+    std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });
 
     bool handled = false;
     client.request(test::Empty(), [&](const zeroeq::uint128_t& type,
@@ -131,15 +156,17 @@ BOOST_AUTO_TEST_CASE(empty_request_object)
     BOOST_CHECK(handled);
 
     thread.join();
+    BOOST_CHECK(serverHandled);
 }
 
 BOOST_AUTO_TEST_CASE(empty_reqrep)
 {
     zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    zeroeq::Client client({server.getURI()});
     const test::Empty reply;
 
-    std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });
+    bool serverHandled = false;
+    std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });
 
     bool handled = false;
     client.request(test::Echo::IDENTIFIER(), nullptr, 0,
@@ -157,15 +184,17 @@ BOOST_AUTO_TEST_CASE(empty_reqrep)
     BOOST_CHECK(handled);
 
     thread.join();
+    BOOST_CHECK(serverHandled);
 }
 
 BOOST_AUTO_TEST_CASE(unhandled_request)
 {
     zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    zeroeq::Client client({server.getURI()});
     const test::Empty reply;
 
-    std::thread thread([&] { BOOST_CHECK(!runOnce(server, {}, reply)); });
+    bool serverHandled = false;
+    std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });
 
     bool handled = false;
     client.request(servus::make_UUID(), nullptr, 0,
@@ -183,4 +212,138 @@ BOOST_AUTO_TEST_CASE(unhandled_request)
     BOOST_CHECK(handled);
 
     thread.join();
+    BOOST_CHECK(!serverHandled);
+}
+
+BOOST_AUTO_TEST_CASE(two_servers)
+{
+    test::Echo echo("The quick brown fox");
+    const test::Echo reply("Jumped over the lazy dog");
+
+    zeroeq::Server server1(zeroeq::NULL_SESSION);
+    zeroeq::Server server2(zeroeq::NULL_SESSION);
+    zeroeq::Client client(zeroeq::URIs{server1.getURI(), server2.getURI()});
+
+    bool serverHandled = true;
+    std::thread thread1([&] {
+        if (!runOnce(server1, echo, reply))
+            serverHandled = false;
+    });
+    std::thread thread2([&] {
+        if (!runOnce(server2, echo, reply))
+            serverHandled = false;
+    });
+
+    size_t handled = 0;
+    const auto func = [&](const zeroeq::uint128_t& type, const void* data,
+                          const size_t size) {
+        BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
+        BOOST_CHECK(data);
+
+        test::Echo got;
+        got.fromBinary(data, size);
+        BOOST_CHECK_EQUAL(got, reply);
+        ++handled;
+    };
+    client.request(echo, func);
+    client.request(echo, func);
+
+    BOOST_CHECK_EQUAL(handled, 0);
+    BOOST_CHECK(client.receive(TIMEOUT));
+    if (handled < 2)
+        BOOST_CHECK(client.receive(TIMEOUT));
+    BOOST_CHECK_EQUAL(handled, 2);
+    BOOST_CHECK(!client.receive(TIMEOUT / 10));
+    BOOST_CHECK_EQUAL(handled, 2);
+
+    thread1.join();
+    thread2.join();
+    BOOST_CHECK(serverHandled);
+}
+
+BOOST_AUTO_TEST_CASE(two_clients)
+{
+    test::Echo echo("The quick brown fox");
+    const test::Echo reply("Jumped over the lazy dog");
+
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client1({server.getURI()});
+    zeroeq::Client client2({server.getURI()});
+
+    bool serverHandled = false;
+    std::thread thread([&] {
+        serverHandled =
+            runOnce(server, echo, reply) && runOnce(server, echo, reply);
+    });
+
+    size_t handled = 0;
+    const auto func = [&](const zeroeq::uint128_t& type, const void* data,
+                          const size_t size) {
+        BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
+        BOOST_CHECK(data);
+
+        test::Echo got;
+        got.fromBinary(data, size);
+        BOOST_CHECK_EQUAL(got, reply);
+        ++handled;
+    };
+
+    client1.request(echo, func);
+    client2.request(echo, func);
+
+    BOOST_CHECK_EQUAL(handled, 0);
+    BOOST_CHECK(client1.receive(TIMEOUT));
+    BOOST_CHECK_EQUAL(handled, 1);
+    BOOST_CHECK(!client1.receive(TIMEOUT / 10));
+    BOOST_CHECK_EQUAL(handled, 1);
+    BOOST_CHECK(client2.receive(TIMEOUT));
+    BOOST_CHECK_EQUAL(handled, 2);
+    BOOST_CHECK(!client2.receive(TIMEOUT / 10));
+    BOOST_CHECK_EQUAL(handled, 2);
+
+    thread.join();
+    BOOST_CHECK(serverHandled);
+}
+
+BOOST_AUTO_TEST_CASE(two_clients_shared)
+{
+    test::Echo echo("The quick brown fox");
+    const test::Echo reply("Jumped over the lazy dog");
+
+    zeroeq::Server server(zeroeq::NULL_SESSION);
+    zeroeq::Client client1({server.getURI()});
+    zeroeq::Client client2({server.getURI()}, client1);
+
+    bool serverHandled = false;
+    std::thread thread([&] {
+        serverHandled =
+            runOnce(server, echo, reply) && runOnce(server, echo, reply);
+    });
+
+    size_t handled = 0;
+    const auto func = [&](const zeroeq::uint128_t& type, const void* data,
+                          const size_t size) {
+        BOOST_CHECK_EQUAL(type, test::Echo::IDENTIFIER());
+        BOOST_CHECK(data);
+
+        test::Echo got;
+        got.fromBinary(data, size);
+        BOOST_CHECK_EQUAL(got, reply);
+        ++handled;
+    };
+
+    client1.request(echo, func);
+    client2.request(echo, func);
+
+    BOOST_CHECK_EQUAL(handled, 0);
+    BOOST_CHECK(client1.receive(TIMEOUT));
+    if (handled < 2)
+        BOOST_CHECK(client1.receive(TIMEOUT));
+
+    BOOST_CHECK_EQUAL(handled, 2);
+    BOOST_CHECK(!client1.receive(TIMEOUT / 10));
+    BOOST_CHECK_EQUAL(handled, 2);
+
+    thread.join();
+    BOOST_CHECK(serverHandled);
 }

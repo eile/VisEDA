@@ -7,6 +7,7 @@
 
 #include <zeroeq/api.h>
 #include <zeroeq/receiver.h> // base class
+#include <zeroeq/sender.h>   // base class
 #include <zeroeq/types.h>
 
 namespace zeroeq
@@ -19,7 +20,7 @@ namespace zeroeq
  *
  * Example: @include tests/reqRep.cpp
  */
-class Server : public zeroeq::Receiver
+class Server : public Receiver, public Sender
 {
 public:
     /**
@@ -140,6 +141,9 @@ public:
     /** Destroy this server. */
     ZEROEQ_API ~Server();
 
+    ZEROEQ_API Server(Server&&);
+    ZEROEQ_API Server& operator=(Server&&);
+
     /**
      * Register a request handler.
      *
@@ -175,5 +179,8 @@ private:
     void addSockets(std::vector<detail::Socket>& entries) final;
     bool process(detail::Socket& socket) final;
     void addConnection(const std::string& uri) final;
+
+    // Sender API
+    zmq::SocketPtr getSocket() final;
 };
 }

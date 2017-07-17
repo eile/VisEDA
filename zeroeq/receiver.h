@@ -54,6 +54,9 @@ public:
     /** Destroy this receiver. */
     ZEROEQ_API virtual ~Receiver();
 
+    ZEROEQ_API Receiver(Receiver&&);
+    ZEROEQ_API Receiver& operator=(Receiver&&);
+
     /**
      * Receive at least one event from all shared receivers.
      *
@@ -98,7 +101,7 @@ private:
     Receiver& operator=(const Receiver&) = delete;
 
     class Impl;
-    std::shared_ptr<Impl> const _impl;
+    std::shared_ptr<Impl> _impl;
 };
 }
 
