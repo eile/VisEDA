@@ -55,7 +55,6 @@ public:
     }
 
     ~Impl() {}
-
     bool addConnection(const std::string& zmqURI, const uint128_t&) final
     {
         return detail::Browser::addConnection(zmqURI, _servers);
@@ -158,7 +157,7 @@ private:
         return more;
     }
 
-    detail::ContextPtr _context;
+    zmq::ContextPtr _context;
     zmq::SocketPtr _servers;
     std::unordered_map<uint128_t, ReplyFunc> _handlers;
 };

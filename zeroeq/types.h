@@ -82,6 +82,7 @@ struct Socket;
 }
 namespace zmq
 {
+using ContextPtr = std::shared_ptr<void>;
 using SocketPtr = std::shared_ptr<void>;
 }
 }

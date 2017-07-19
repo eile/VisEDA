@@ -127,7 +127,6 @@ public:
     }
 
     ~SocketImpl() {}
-
     bool process(void* socket, Monitor& monitor)
     {
         // Messages consist of 2 Frames, the first containing the event-id and
@@ -165,7 +164,7 @@ public:
     }
 
 private:
-    detail::ContextPtr _context;
+    zmq::ContextPtr _context;
 };
 
 Monitor::Impl* newImpl(Sender& sender)

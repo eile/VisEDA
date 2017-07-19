@@ -174,7 +174,7 @@ public:
     }
 
 private:
-    detail::ContextPtr _context;
+    zmq::ContextPtr _context;
     typedef std::map<uint128_t, EventPayloadFunc> EventFuncMap;
     EventFuncMap _eventFuncs;
 

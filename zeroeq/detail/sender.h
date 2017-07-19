@@ -19,7 +19,7 @@ namespace detail
 {
 class Sender
 {
-    ContextPtr _context; // must be private before socket
+    zmq::ContextPtr _context; // must be private before socket
 
 public:
     ZEROEQ_API Sender(const URI& uri_, const int type,
