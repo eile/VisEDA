@@ -106,8 +106,9 @@ BOOST_AUTO_TEST_CASE(empty_request_raw)
 
 BOOST_AUTO_TEST_CASE(empty_request_object)
 {
-    zeroeq::Server server(zeroeq::NULL_SESSION);
-    zeroeq::Client client({zeroeq::URI(server.getURI())});
+    zeroeq::Server server(zeroeq::URI("inproc://zeroeq.test.empty_request_raw"),
+                          zeroeq::NULL_SESSION);
+    zeroeq::Client client({server.getURI()});
     const test::Echo reply("Jumped over the lazy dog");
 
     std::thread thread([&] { BOOST_CHECK(runOnce(server, {}, reply)); });

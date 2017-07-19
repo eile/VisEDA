@@ -34,13 +34,17 @@ namespace
 inline std::string buildZmqURI(const std::string& schema, std::string host,
                                const uint16_t port)
 {
-    if (host.empty())
+    if (host.empty() && schema == DEFAULT_SCHEMA)
         host = "*";
 
     const std::string zmqURI(schema + "://" + host);
-    if (port == 0) // zmq expects host:* instead of host:0
-        return zmqURI + ":*";
-
+    if (port == 0)
+    {
+        if (schema == DEFAULT_SCHEMA)
+            return zmqURI + ":*"; // zmq expects host:* instead of host:0
+        else
+            return zmqURI;
+    }
     return zmqURI + ":" + std::to_string(int(port));
 }
 

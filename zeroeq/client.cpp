@@ -37,9 +37,12 @@ public:
     {
         for (const auto& uri : uris)
         {
-            if (uri.getHost().empty() || uri.getPort() == 0)
+            if (uri.getScheme() == DEFAULT_SCHEMA &&
+                (uri.getHost().empty() || uri.getPort() == 0))
+            {
                 ZEROEQTHROW(std::runtime_error(
                     std::string("Non-fully qualified URI used for server")));
+            }
 
             const auto& zmqURI = buildZmqURI(uri);
             if (!addConnection(zmqURI, uint128_t()))

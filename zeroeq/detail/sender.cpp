@@ -49,6 +49,9 @@ std::string Sender::getAddress() const
 
 void Sender::initURI()
 {
+    if (uri.getScheme() != DEFAULT_SCHEMA)
+        return;
+
     std::string host = uri.getHost();
     if (host == "*")
         host.clear();
