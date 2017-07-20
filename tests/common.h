@@ -86,6 +86,7 @@ std::ostream& operator<<(std::ostream& os, const Echo& echo)
 class Empty : public servus::Serializable
 {
 public:
+    Empty() = default;
     static std::string TYPENAME() { return "zeroeq::test::Empty"; }
     static servus::uint128_t IDENTIFIER()
     {

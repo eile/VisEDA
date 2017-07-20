@@ -166,8 +166,6 @@ public:
     /** @return the session name that is announced */
     ZEROEQ_API const std::string& getSession() const;
 
-    // ZEROEQ_API std::string getAddress() const; //!< @internal
-
 private:
     class Impl;
     std::unique_ptr<Impl> _impl;

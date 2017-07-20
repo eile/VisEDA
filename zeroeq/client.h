@@ -19,7 +19,7 @@ namespace zeroeq
  * A connection to a non-existing server is valid. Requests will be executed
  * once the servers are available.
  *
- * A receive on any instance of a shared group will work on all instance
+ * A receive on any instance of a shared group will receive on all instances
  * and call the registered handlers.
  *
  * The session of a Client-Server setup is typically semantically different from
@@ -103,8 +103,8 @@ public:
     /**
      * Request the execution of the given data on a connected Server.
      *
-     * The reply function will be executed during receive(). May block of when
-     * all servers arwe overloaded or no server is connected.
+     * The reply function will be executed during receive(). May block when
+     * all servers are overloaded or no server is connected.
      *
      * @param request the request identifier and payload
      * @param func the function to execute for the reply

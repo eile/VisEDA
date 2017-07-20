@@ -152,9 +152,10 @@ private:
                 }
             }
             }
-        } while (haveData && duration_cast<milliseconds>(
-                                 high_resolution_clock::now() - startTime)
-                                     .count() < timeout);
+        } while (haveData &&
+                 duration_cast<milliseconds>(high_resolution_clock::now() -
+                                             startTime)
+                         .count() < timeout);
         return hadData;
     }
 };
