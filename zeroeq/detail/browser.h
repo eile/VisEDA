@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "constants.h"
+#include "context.h"
 #include "socket.h"
 
 #include "../log.h"
@@ -24,6 +25,7 @@ public:
     Browser(const std::string& service, const std::string session)
         : _servus(service)
         , _session(session)
+        , _context(detail::getContext())
     {
         if (_session == zeroeq::NULL_SESSION || session.empty())
             return;
@@ -43,7 +45,6 @@ public:
     }
 
     const std::string& getSession() const { return _session; }
-
     void update()
     {
         if (!_servus.isBrowsing())
@@ -85,6 +86,7 @@ public:
 protected:
     using SocketMap = std::map<std::string, zmq::SocketPtr>;
 
+    void* getContext() { return _context.get(); }
     const SocketMap& getSockets() { return _sockets; }
     bool addConnection(const std::string& zmqURI, zmq::SocketPtr socket)
     {
@@ -104,6 +106,7 @@ private:
     servus::Servus _servus;
     const std::string _session;
 
+    zmq::ContextPtr _context;
     SocketMap _sockets;
     std::vector<detail::Socket> _entries;
 

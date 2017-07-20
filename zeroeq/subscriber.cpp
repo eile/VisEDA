@@ -10,7 +10,6 @@
 #include "detail/byteswap.h"
 #include "detail/common.h"
 #include "detail/constants.h"
-#include "detail/context.h"
 #include "detail/sender.h"
 #include "detail/socket.h"
 #include "log.h"
@@ -32,7 +31,6 @@ public:
         : Browser(PUBLISHER_SERVICE, session == DEFAULT_SESSION
                                          ? getDefaultUserSession()
                                          : session)
-        , _context(detail::getContext())
         , _selfInstance(detail::Sender::getUUID())
     {
         if (session == zeroeq::NULL_SESSION || session.empty())
@@ -42,7 +40,6 @@ public:
 
     Impl(const URIs& uris)
         : Browser(PUBLISHER_SERVICE, {})
-        , _context(detail::getContext())
         , _selfInstance(detail::Sender::getUUID())
     {
         for (const URI& uri : uris)
@@ -142,7 +139,7 @@ public:
         if (instance == _selfInstance)
             return true;
 
-        zmq::SocketPtr socket(zmq_socket(_context.get(), ZMQ_SUB),
+        zmq::SocketPtr socket(zmq_socket(getContext(), ZMQ_SUB),
                               [](void* s) { ::zmq_close(s); });
         const int hwm = 0;
         zmq_setsockopt(socket.get(), ZMQ_RCVHWM, &hwm, sizeof(hwm));
@@ -174,7 +171,6 @@ public:
     }
 
 private:
-    zmq::ContextPtr _context;
     typedef std::map<uint128_t, EventPayloadFunc> EventFuncMap;
     EventFuncMap _eventFuncs;
 

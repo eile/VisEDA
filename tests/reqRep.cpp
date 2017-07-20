@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(empty_reqrep)
 {
     zeroeq::Server server(zeroeq::NULL_SESSION);
     zeroeq::Client client({server.getURI()});
-    const test::Empty reply;
+    const test::Empty reply{};
 
     bool serverHandled = false;
     std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(unhandled_request)
 {
     zeroeq::Server server(zeroeq::NULL_SESSION);
     zeroeq::Client client({server.getURI()});
-    const test::Empty reply;
+    const test::Empty reply{};
 
     bool serverHandled = false;
     std::thread thread([&] { serverHandled = runOnce(server, {}, reply); });

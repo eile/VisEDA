@@ -7,7 +7,6 @@
 
 #include "detail/browser.h"
 #include "detail/common.h"
-#include "detail/context.h"
 
 #include <servus/servus.h>
 #include <unordered_map>
@@ -20,8 +19,7 @@ public:
     Impl(const std::string& session)
         : Browser(SERVER_SERVICE,
                   session == DEFAULT_SESSION ? getDefaultAppSession() : session)
-        , _context(detail::getContext())
-        , _servers(zmq_socket(_context.get(), ZMQ_DEALER),
+        , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
         if (session == zeroeq::NULL_SESSION || session.empty())
@@ -31,8 +29,7 @@ public:
 
     Impl(const URIs& uris)
         : Browser(SERVER_SERVICE, {})
-        , _context(detail::getContext())
-        , _servers(zmq_socket(_context.get(), ZMQ_DEALER),
+        , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
         for (const auto& uri : uris)
@@ -158,7 +155,6 @@ private:
         return more;
     }
 
-    zmq::ContextPtr _context;
     zmq::SocketPtr _servers;
     std::unordered_map<uint128_t, ReplyFunc> _handlers;
 };

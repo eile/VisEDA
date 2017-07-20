@@ -59,6 +59,7 @@ public:
     const std::string& getMessage() const { return _message; }
     bool operator==(const Echo& rhs) const { return _message == rhs._message; }
     bool operator!=(const Echo& rhs) const { return _message != rhs._message; }
+
 private:
     bool _fromBinary(const void* data, const size_t size) final
     {
@@ -86,7 +87,6 @@ std::ostream& operator<<(std::ostream& os, const Echo& echo)
 class Empty : public servus::Serializable
 {
 public:
-    Empty() = default;
     static std::string TYPENAME() { return "zeroeq::test::Empty"; }
     static servus::uint128_t IDENTIFIER()
     {
@@ -94,6 +94,7 @@ public:
     }
 
     std::string getTypeName() const final { return TYPENAME(); }
+
 private:
     bool _fromBinary(const void*, const size_t) final { return true; }
     Data _toBinary() const final { return Data(); }
