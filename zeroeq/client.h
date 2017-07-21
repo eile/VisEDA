@@ -39,7 +39,7 @@ public:
      *
      * Postconditions:
      * - discovers servers on _zeroeq_rep._tcp ZeroConf service
-     * - filters session \<username\> or ZEROEQ_SESSION from environment
+     * - filters session \<username\> or ZEROEQ_SERVER_SESSION from environment
      *
      * @throw std::runtime_error if ZeroConf is not available
      */
@@ -120,8 +120,8 @@ public:
      * all servers are overloaded or no server is connected.
      *
      * @param request the request identifier
-     * @param data the payload data of the request
-     * @param size the size of the payload data
+     * @param data the payload data of the request, may be nullptr
+     * @param size the size of the payload data, may be 0
      * @param func the function to execute for the reply
      */
     ZEROEQ_API bool request(const uint128_t& request, const void* data,

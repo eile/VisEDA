@@ -34,17 +34,13 @@ namespace
 inline std::string buildZmqURI(const std::string& schema, std::string host,
                                const uint16_t port)
 {
-    if (host.empty() && schema == DEFAULT_SCHEMA)
+    if (host.empty())
         host = "*";
 
     const std::string zmqURI(schema + "://" + host);
-    if (port == 0)
-    {
-        if (schema == DEFAULT_SCHEMA)
-            return zmqURI + ":*"; // zmq expects host:* instead of host:0
-        else
-            return zmqURI;
-    }
+    if (port == 0) // zmq expects host:* instead of host:0
+        return zmqURI + ":*";
+
     return zmqURI + ":" + std::to_string(int(port));
 }
 
@@ -67,7 +63,7 @@ inline std::string getUserName()
     return user ? user : UNKNOWN_USER;
 }
 
-std::string getApplicationName()
+inline std::string getApplicationName()
 {
 // http://stackoverflow.com/questions/933850
 #ifdef _MSC_VER
@@ -103,15 +99,25 @@ std::string getApplicationName()
     return execPath.substr(lastSeparator + 1);
 }
 
-inline std::string getDefaultUserSession()
+inline std::string getDefaultPubSession()
 {
+    const char* pubSession = getenv(ENV_PUB_SESSION.c_str());
     const char* session = getenv(ENV_SESSION.c_str());
-    return session && strcmp(session, "") != 0 ? session : getUserName();
+    if (session)
+        ZEROEQWARN << "Found deprecated " << ENV_SESSION
+                   << " in environment, please use " << ENV_PUB_SESSION
+                   << std::endl;
+
+    if (pubSession && strcmp(pubSession, "") != 0)
+        return pubSession;
+    if (session && strcmp(session, "") != 0)
+        return session;
+    return getUserName();
 }
 
-inline std::string getDefaultAppSession()
+inline std::string getDefaultRepSession()
 {
-    const char* session = getenv(ENV_SESSION.c_str());
+    const char* session = getenv(ENV_REP_SESSION.c_str());
     return session && strcmp(session, "") != 0 ? session : getApplicationName();
 }
 }

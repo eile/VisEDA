@@ -51,9 +51,7 @@ public:
      */
     ZEROEQ_API explicit Receiver(Receiver& shared);
 
-    /** Destroy this receiver. */
     ZEROEQ_API virtual ~Receiver();
-
     ZEROEQ_API Receiver(Receiver&&);
     ZEROEQ_API Receiver& operator=(Receiver&&);
 

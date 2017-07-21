@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(different_session_at_runtime)
     if (!servus::Servus::isAvailable() || getenv("TRAVIS"))
         return;
 
-    setenv("ZEROEQ_SESSION", "testsession", 1);
+    setenv("ZEROEQ_PUB_SESSION", "testsession", 1);
     const zeroeq::Publisher publisher;
 
     servus::Servus service(PUBLISHER_SERVICE);
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(different_session_at_runtime)
 
     const std::string& instance = instances[0];
     BOOST_CHECK_EQUAL(service.get(instance, KEY_SESSION), "testsession");
-    unsetenv("ZEROEQ_SESSION");
+    unsetenv("ZEROEQ_PUB_SESSION");
 }
 
 BOOST_AUTO_TEST_CASE(empty_session)
@@ -144,12 +144,12 @@ BOOST_AUTO_TEST_CASE(empty_session)
 
 BOOST_AUTO_TEST_CASE(empty_session_from_environment)
 {
-    setenv("ZEROEQ_SESSION", "", 1);
+    setenv("ZEROEQ_PUB_SESSION", "", 1);
 
     const zeroeq::Publisher publisher;
     BOOST_CHECK_EQUAL(publisher.getSession(), getUserName());
 
-    unsetenv("ZEROEQ_SESSION");
+    unsetenv("ZEROEQ_PUB_SESSION");
 }
 
 BOOST_AUTO_TEST_CASE(fixed_uri_and_session)

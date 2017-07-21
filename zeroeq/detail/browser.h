@@ -27,8 +27,9 @@ public:
         , _session(session)
         , _context(detail::getContext())
     {
-        if (_session == zeroeq::NULL_SESSION || session.empty())
-            return;
+        if (session == zeroeq::NULL_SESSION || session.empty())
+            ZEROEQTHROW(std::runtime_error(
+                std::string("Invalid session name for browsing")));
 
         if (!servus::Servus::isAvailable())
             ZEROEQTHROW(
@@ -38,6 +39,13 @@ public:
         update();
     }
 
+    Browser(const std::string& service)
+        : _servus(service)
+        , _session(zeroeq::NULL_SESSION)
+        , _context(detail::getContext())
+    {
+    }
+
     virtual ~Browser()
     {
         if (_servus.isBrowsing())
@@ -45,6 +53,7 @@ public:
     }
 
     const std::string& getSession() const { return _session; }
+
     void update()
     {
         if (!_servus.isBrowsing())
@@ -66,17 +75,26 @@ public:
                 }
 
                 const uint128_t identifier(_servus.get(instance, KEY_INSTANCE));
-                if (!addConnection(zmqURI, identifier))
-                {
-                    ZEROEQINFO << "Cannot connect to " << zmqURI << ": "
-                               << zmq_strerror(zmq_errno()) << std::endl;
-                }
+                zmq::SocketPtr socket = createSocket(identifier);
+                if (socket)
+                    _addConnection(zmqURI, socket);
             }
         }
     }
 
-    virtual bool addConnection(const std::string& zmqURI,
-                               const uint128_t& instance) = 0;
+    bool addConnection(const std::string& zmqURI)
+    {
+        zmq::SocketPtr socket = createSocket(uint128_t());
+        if (socket)
+            return _addConnection(zmqURI, socket);
+        return true;
+    }
+
+    /**
+     * Create the socket for zmqURI, return nullptr if connection is to be
+     * ignored.
+     */
+    virtual zmq::SocketPtr createSocket(const uint128_t& instance) = 0;
 
     void addSockets(std::vector<detail::Socket>& entries)
     {
@@ -88,12 +106,17 @@ protected:
 
     void* getContext() { return _context.get(); }
     const SocketMap& getSockets() { return _sockets; }
-    bool addConnection(const std::string& zmqURI, zmq::SocketPtr socket)
+
+    bool _addConnection(const std::string& zmqURI, zmq::SocketPtr socket)
     {
         if (zmq_connect(socket.get(), zmqURI.c_str()) == -1)
+        {
+            ZEROEQINFO << "Cannot connect to " << zmqURI << ": "
+                       << zmq_strerror(zmq_errno()) << std::endl;
             return false;
+        }
 
-        _sockets[zmqURI] = socket;
+        _sockets[zmqURI] = socket; // ref socket since zmq struct is void*
 
         detail::Socket entry;
         entry.socket = socket.get();

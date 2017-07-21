@@ -16,19 +16,16 @@ namespace zeroeq
 class Client::Impl : public detail::Browser
 {
 public:
-    Impl(const std::string& session)
+    explicit Impl(const std::string& session)
         : Browser(SERVER_SERVICE,
-                  session == DEFAULT_SESSION ? getDefaultAppSession() : session)
+                  session == DEFAULT_SESSION ? getDefaultRepSession() : session)
         , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
-        if (session == zeroeq::NULL_SESSION || session.empty())
-            ZEROEQTHROW(std::runtime_error(
-                std::string("Invalid session name for client")));
     }
 
-    Impl(const URIs& uris)
-        : Browser(SERVER_SERVICE, {})
+    explicit Impl(const URIs& uris)
+        : Browser(SERVER_SERVICE)
         , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
@@ -42,7 +39,7 @@ public:
             }
 
             const auto& zmqURI = buildZmqURI(uri);
-            if (!addConnection(zmqURI, uint128_t()))
+            if (!addConnection(zmqURI))
             {
                 ZEROEQTHROW(std::runtime_error("Cannot connect client to " +
                                                zmqURI + ": " +
@@ -52,21 +49,19 @@ public:
     }
 
     ~Impl() {}
-    bool addConnection(const std::string& zmqURI, const uint128_t&) final
-    {
-        return detail::Browser::addConnection(zmqURI, _servers);
-    }
 
-    bool request(uint128_t requestID, const void* data, size_t size,
+    zmq::SocketPtr createSocket(const uint128_t&) final { return _servers; }
+
+    bool request(uint128_t requestID, const void* data, const size_t size,
                  const ReplyFunc& func)
     {
         const bool hasPayload = data && size > 0;
-        auto id = servus::make_UUID();
+        ++_id;
 #ifdef ZEROEQ_BIGENDIAN
         detail::byteswap(requestID); // convert to little endian wire protocol
 #endif
 
-        if (!_send(&id, sizeof(id), ZMQ_SNDMORE) ||
+        if (!_send(&_id, sizeof(_id), ZMQ_SNDMORE) ||
             !_send(nullptr, 0, ZMQ_SNDMORE) || // frame delimiter
             !_send(&requestID, sizeof(requestID), hasPayload ? ZMQ_SNDMORE : 0))
         {
@@ -76,13 +71,13 @@ public:
         if (hasPayload && !_send(data, size, 0))
             return false;
 
-        _handlers[id] = func;
+        _handlers[_id] = func;
         return true;
     }
 
     bool process(detail::Socket& socket)
     {
-        uint128_t id;
+        uint64_t id;
         uint128_t replyID;
 
         if (!_recv(&id, sizeof(id)) || !_recv(nullptr, 0))
@@ -106,8 +101,8 @@ public:
             if (payload)
                 zmq_msg_close(&msg);
 
-            ZEROEQTHROW(
-                std::runtime_error("Got unrequested reply " + id.getString()));
+            ZEROEQTHROW(std::runtime_error("Got unrequested reply " +
+                                           std::to_string(id)));
         }
 
         if (payload)
@@ -117,6 +112,7 @@ public:
         }
         else
             i->second(replyID, nullptr, 0);
+        _handlers.erase(i);
         return true;
     }
 
@@ -156,7 +152,8 @@ private:
     }
 
     zmq::SocketPtr _servers;
-    std::unordered_map<uint128_t, ReplyFunc> _handlers;
+    std::unordered_map<uint64_t, ReplyFunc> _handlers;
+    uint64_t _id{0};
 };
 
 Client::Client()
@@ -205,8 +202,8 @@ bool Client::request(const servus::Serializable& req, const ReplyFunc& func)
     return request(req.getTypeIdentifier(), data.ptr.get(), data.size, func);
 }
 
-bool Client::request(const uint128_t& requestID, const void* data, size_t size,
-                     const ReplyFunc& func)
+bool Client::request(const uint128_t& requestID, const void* data,
+                     const size_t size, const ReplyFunc& func)
 {
     return _impl->request(requestID, data, size, func);
 }
@@ -233,6 +230,6 @@ void Client::update()
 
 void Client::addConnection(const std::string& uri)
 {
-    _impl->addConnection(uri, uint128_t());
+    _impl->addConnection(uri);
 }
 }

@@ -26,7 +26,7 @@ class Publisher::Impl : public detail::Sender
 public:
     Impl(const URI& uri_, const std::string& session)
         : detail::Sender(uri_, ZMQ_XPUB, PUBLISHER_SERVICE,
-                         session == DEFAULT_SESSION ? getDefaultUserSession()
+                         session == DEFAULT_SESSION ? getDefaultPubSession()
                                                     : session)
     {
         if (session.empty())

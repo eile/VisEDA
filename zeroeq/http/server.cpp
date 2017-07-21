@@ -19,7 +19,6 @@
 #include "jsoncpp/json/json.h"
 
 #include <servus/serializable.h>
-#include <servus/servus.h>
 
 // for NI_MAXHOST
 #ifdef _WIN32
@@ -138,7 +137,7 @@ class Server::Impl : public detail::Sender
 public:
     Impl(const URI& uri_, const std::string& session)
         : detail::Sender(URI(_getInprocURI()), ZMQ_PAIR, HTTP_SERVER_SERVICE,
-                         session == DEFAULT_SESSION ? getDefaultUserSession()
+                         session == DEFAULT_SESSION ? getDefaultPubSession()
                                                     : session)
         , _requestHandler(_getInprocURI())
         , _httpOptions(_requestHandler)

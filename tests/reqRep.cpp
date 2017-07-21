@@ -48,6 +48,15 @@ bool runOnce(zeroeq::Server& server, const test::Echo& request, const R& reply)
 
     if (!server.receive(TIMEOUT))
         throw std::runtime_error("No request handled");
+
+    if (!server.remove(test::Echo::IDENTIFIER()) ||
+        !server.remove(test::Empty::IDENTIFIER()))
+    {
+        throw std::runtime_error("Can't remove request handler");
+    }
+    if (server.remove(test::Echo::IDENTIFIER()))
+        throw std::runtime_error("Can remove removed request handler");
+
     return handled;
 }
 }

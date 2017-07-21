@@ -30,7 +30,8 @@ public:
      * - bound to all network interfaces
      * - runs on a random port
      * - announces itself on the _zeroeq_rep._tcp ZeroConf service as host:port
-     * - announces session \<username\> or ZEROEQ_SESSION from environment
+     * - announces session \<username\> or ZEROEQ_SERVER_SESSION from
+     * environment
      *
      * @throw std::runtime_error if session is empty or socket setup fails
      */
@@ -56,7 +57,8 @@ public:
      * Postconditions:
      * - bound to the host and/or port from the given URI
      * - announces itself on the _zeroeq_rep._tcp ZeroConf service as host:port
-     * - announces session \<username\> or ZEROEQ_SESSION from environment
+     * - announces session \<username\> or ZEROEQ_SERVER_SESSION from
+     * environment
      *
      * @param uri publishing URI in the format [*|host|IP|IF][:port]
      * @throw std::runtime_error if session is empty or socket setup fails
@@ -85,7 +87,8 @@ public:
      * - bound to all network interfaces
      * - runs on a random port
      * - announces itself on the _zeroeq_rep._tcp ZeroConf service as host:port
-     * - announces session \<username\> or ZEROEQ_SESSION from environment
+     * - announces session \<username\> or ZEROEQ_SERVER_SESSION from
+     * environment
      *
      * @param shared another receiver to share data reception with
      * @throw std::runtime_error if session is empty or socket setup fails
@@ -113,7 +116,8 @@ public:
      * Postconditions:
      * - bound to the host and/or port from the given URI
      * - announces itself on the _zeroeq_rep._tcp ZeroConf service as host:port
-     * - announces session \<username\> or ZEROEQ_SESSION from environment
+     * - announces session \<username\> or ZEROEQ_SERVER_SESSION from
+     * environment
      *
      * @param uri publishing URI in the format [*|host|IP|IF][:port]
      * @param shared another receiver to share data reception with
@@ -154,6 +158,13 @@ public:
     ZEROEQ_API bool handle(const uint128_t& request, const HandleFunc& func);
 
     /**
+     * Remove a registered request handler.
+     *
+     * @return true if the handler was removed, false if it was not registered.
+     */
+    ZEROEQ_API bool remove(const uint128_t& request);
+
+    /**
      * Get the server URI.
      *
      * Contains the used hostname and port, if none where given in the
@@ -179,6 +190,6 @@ private:
     void addConnection(const std::string& uri) final;
 
     // Sender API
-    zmq::SocketPtr getSocket() final;
+    ZEROEQ_API zmq::SocketPtr getSocket() final;
 };
 }

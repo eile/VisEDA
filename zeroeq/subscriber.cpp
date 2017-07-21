@@ -28,9 +28,8 @@ class Subscriber::Impl : public detail::Browser
 {
 public:
     Impl(const std::string& session)
-        : Browser(PUBLISHER_SERVICE, session == DEFAULT_SESSION
-                                         ? getDefaultUserSession()
-                                         : session)
+        : Browser(PUBLISHER_SERVICE,
+                  session == DEFAULT_SESSION ? getDefaultPubSession() : session)
         , _selfInstance(detail::Sender::getUUID())
     {
         if (session == zeroeq::NULL_SESSION || session.empty())
@@ -39,7 +38,7 @@ public:
     }
 
     Impl(const URIs& uris)
-        : Browser(PUBLISHER_SERVICE, {})
+        : Browser(PUBLISHER_SERVICE)
         , _selfInstance(detail::Sender::getUUID())
     {
         for (const URI& uri : uris)
@@ -52,7 +51,7 @@ public:
             }
 
             const std::string& zmqURI = buildZmqURI(uri);
-            if (!addConnection(zmqURI, uint128_t()))
+            if (!addConnection(zmqURI))
             {
                 ZEROEQTHROW(std::runtime_error("Cannot connect subscriber to " +
                                                zmqURI + ": " +
@@ -61,7 +60,6 @@ public:
         }
     }
 
-    ~Impl() {}
     bool subscribe(servus::Serializable& serializable)
     {
         const auto func = [&serializable](const void* data, const size_t size) {
@@ -134,18 +132,15 @@ public:
         return true;
     }
 
-    bool addConnection(const std::string& zmqURI, const uint128_t& instance)
+    zmq::SocketPtr createSocket(const uint128_t& instance)
     {
         if (instance == _selfInstance)
-            return true;
+            return {};
 
         zmq::SocketPtr socket(zmq_socket(getContext(), ZMQ_SUB),
                               [](void* s) { ::zmq_close(s); });
         const int hwm = 0;
         zmq_setsockopt(socket.get(), ZMQ_RCVHWM, &hwm, sizeof(hwm));
-
-        if (!detail::Browser::addConnection(zmqURI, socket))
-            return false;
 
         // Tell a Monitor on a Publisher we're here
         if (zmq_setsockopt(socket.get(), ZMQ_SUBSCRIBE, &MEERKAT,
@@ -167,7 +162,7 @@ public:
                     zmq_strerror(zmq_errno())));
             }
         }
-        return true;
+        return socket;
     }
 
 private:
@@ -292,6 +287,6 @@ void Subscriber::update()
 
 void Subscriber::addConnection(const std::string& uri)
 {
-    _impl->addConnection(uri, uint128_t());
+    _impl->addConnection(uri);
 }
 }

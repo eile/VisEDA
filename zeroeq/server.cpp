@@ -18,7 +18,7 @@ class Server::Impl : public detail::Sender
 public:
     Impl(const URI& uri_, const std::string& session)
         : detail::Sender(uri_, ZMQ_REP, SERVER_SERVICE,
-                         session == DEFAULT_SESSION ? getDefaultAppSession()
+                         session == DEFAULT_SESSION ? getDefaultRepSession()
                                                     : session)
     {
         if (session.empty())
@@ -30,13 +30,13 @@ public:
             ZEROEQTHROW(
                 std::runtime_error(std::string("Cannot bind server socket '") +
                                    zmqURI + "': " + zmq_strerror(zmq_errno())));
-
         initURI();
         if (session != NULL_SESSION)
             announce();
     }
 
     ~Impl() {}
+
     bool handle(const uint128_t& request, const HandleFunc& func)
     {
         if (_handlers.find(request) != _handlers.end())
@@ -44,6 +44,11 @@ public:
 
         _handlers[request] = func;
         return true;
+    }
+
+    bool remove(const uint128_t& request)
+    {
+        return _handlers.erase(request) > 0;
     }
 
     bool process(detail::Socket&)
@@ -80,6 +85,8 @@ public:
             if (!_send(&reply.first, sizeof(reply.first),
                        hasReplyData ? ZMQ_SNDMORE : 0))
             {
+                if (payload)
+                    zmq_msg_close(&msg);
                 return true;
             }
             if (hasReplyData)
@@ -111,13 +118,16 @@ private:
     /** @return true if more data available */
     bool _recv(void* data, const size_t size)
     {
-        // std::cout << uri.getPort() << ": " << size << std::endl;
         zmq_msg_t msg;
         zmq_msg_init(&msg);
         zmq_msg_recv(&msg, socket.get(), 0);
         if (zmq_msg_size(&msg) != size)
-            ZEROEQWARN << "Request size mismatch, expected " << size << " got "
-                       << zmq_msg_size(&msg) << std::endl;
+        {
+            ZEROEQTHROW(std::runtime_error(
+                std::string("Message size mismatch, expected ") +
+                std::to_string(size) + " got " +
+                std::to_string(zmq_msg_size(&msg))));
+        }
         else
             memcpy(data, zmq_msg_data(&msg), size);
         const bool more = zmq_msg_more(&msg);
@@ -224,6 +234,11 @@ const URI& Server::getURI() const
 bool Server::handle(const uint128_t& request, const HandleFunc& func)
 {
     return _impl->handle(request, func);
+}
+
+bool Server::remove(const uint128_t& request)
+{
+    return _impl->remove(request);
 }
 
 zmq::SocketPtr Server::getSocket()

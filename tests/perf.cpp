@@ -21,10 +21,10 @@ using std::chrono::milliseconds;
 
 namespace
 {
-static const size_t msgSize = 1024;
-static const size_t maxMsgSize = 256 * 1024 * 1024;
-static const size_t maxServers = 32;
-static const size_t queueSize = 1024;
+const size_t msgSize = 1024;
+const size_t maxMsgSize = 256 * 1024 * 1024;
+const size_t maxServers = 32;
+const size_t queueSize = 1024;
 
 const servus::uint128_t typeID = servus::make_uint128("zeroeq::test::Message");
 
@@ -37,6 +37,7 @@ public:
     }
     std::string getTypeName() const final { return "zeroeq::test::Message"; }
     servus::uint128_t getTypeIdentifier() const final { return typeID; }
+
 private:
     bool _fromBinary(const void* data, const size_t size) final
     {
@@ -83,7 +84,7 @@ public:
     bool running;
 };
 
-void runPubSub(const std::string uri)
+void runPubSub(const std::string& uri)
 {
     zeroeq::Publisher publisher(zeroeq::URI(uri), zeroeq::NULL_SESSION);
     zeroeq::Subscriber subscriber(publisher.getURI());
