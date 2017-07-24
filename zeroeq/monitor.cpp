@@ -137,17 +137,27 @@ public:
 
         //  The layout of the first Frame is: 16 bit event id 32 bit event value
         if (zmq_msg_recv(&msg, socket, 0) == -1)
+        {
+            ZEROEQWARN << "Can't read event id from monitor socket"
+                       << std::endl;
             return false;
-
+        }
         const uint16_t event = *(uint16_t*)zmq_msg_data(&msg);
-        if (!zmq_msg_more(&msg))
-            return false;
-        zmq_msg_close(&msg);
+        // Ignore event value
 
-        //  Second frame in message contains event address, skip
-        zmq_msg_init(&msg);
-        if (zmq_msg_recv(&msg, socket, 0) == -1)
-            return false;
+        if (zmq_msg_more(&msg))
+        {
+            zmq_msg_close(&msg);
+
+            //  Second frame in message contains event address, skip
+            zmq_msg_init(&msg);
+            if (zmq_msg_recv(&msg, socket, 0) == -1)
+                ZEROEQWARN << "Can't read address from monitor socket"
+                           << std::endl;
+        }
+        else
+            ZEROEQWARN << "Monitor event has no event address" << std::endl;
+
         zmq_msg_close(&msg);
 
         switch (event)
