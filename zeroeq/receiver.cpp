@@ -177,21 +177,8 @@ Receiver::~Receiver()
     _impl->remove(this);
 }
 
-Receiver::Receiver(Receiver&& from)
-    : _impl(from._impl)
-{
-    from._impl.reset();
-}
-
-Receiver& Receiver::operator=(Receiver&& from)
-{
-    if (this == &from)
-        return *this;
-
-    _impl = from._impl;
-    from._impl.reset();
-    return *this;
-}
+Receiver::Receiver(Receiver&&) = default;
+Receiver& Receiver::operator=(Receiver&&) = default;
 
 bool Receiver::receive(const uint32_t timeout)
 {

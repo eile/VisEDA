@@ -190,21 +190,8 @@ Server::~Server()
 {
 }
 
-Server::Server(Server&& from)
-    : Receiver(from)
-    , _impl(std::move(from._impl))
-{
-}
-
-Server& Server::operator=(Server&& from)
-{
-    if (this == &from)
-        return *this;
-
-    Receiver::operator=(std::move(from));
-    _impl = std::move(from._impl);
-    return *this;
-}
+Server::Server(Server&&) = default;
+Server& Server::operator=(Server&&) = default;
 
 const std::string& Server::getSession() const
 {

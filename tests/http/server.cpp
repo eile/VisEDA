@@ -17,7 +17,6 @@
 #include <servus/serializable.h>
 
 #include <boost/network/protocol/http/client.hpp>
-#include <boost/network/protocol/http/server.hpp>
 #include <boost/test/unit_test.hpp>
 #include <map>
 #include <thread>
@@ -262,8 +261,8 @@ private:
 
         BOOST_CHECK_MESSAGE(status(response) == expected.status,
                             "At l." + std::to_string(line) + ": " +
-                                std::to_string(status(response)) + " != " +
-                                std::to_string(int(expected.status)));
+                                std::to_string(status(response)) +
+                                " != " + std::to_string(int(expected.status)));
 
         std::map<std::string, std::string> expectedHeaders{
             {"Content-Length", std::to_string(expected.body.size())}};
@@ -844,8 +843,8 @@ BOOST_AUTO_TEST_CASE(handle_headers)
         {"Last-Modified", modified},
         {"Location", location},
         {"Retry-After", retry}};
-    const Response expectedResponse{ServerReponse::ok, "path/suffix:",
-                                    expectedHeaders};
+    const Response expectedResponse{ServerReponse::ok,
+                                    "path/suffix:", expectedHeaders};
 
     for (int method = 0; method < int(zeroeq::http::Method::ALL); ++method)
     {

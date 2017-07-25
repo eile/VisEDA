@@ -27,7 +27,7 @@ public:
            const connection::Broker::PortSelection mode)
         : Sender(URI(std::string("tcp://*:") +
                      std::to_string(uint32_t(zeroeq::detail::getPort(name)))),
-                 ZMQ_REP, {}, {})
+                 ZMQ_REP)
         , _receiver(receiver)
     {
         if (!_listen(mode))
@@ -39,7 +39,7 @@ public:
     }
 
     Broker(Receiver& receiver, const std::string& address)
-        : Sender(URI(std::string("tcp://") + address), ZMQ_REP, {}, {})
+        : Sender(URI(std::string("tcp://") + address), ZMQ_REP)
         , _receiver(receiver)
     {
         _listen(connection::Broker::PORT_FIXED);

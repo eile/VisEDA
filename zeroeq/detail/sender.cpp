@@ -37,6 +37,11 @@ Sender::Sender(const URI& uri_, const int type, const std::string service,
     zmq_setsockopt(socket.get(), ZMQ_SNDHWM, &hwm, sizeof(hwm));
 }
 
+Sender::Sender(const URI& uri_, const int type)
+    : Sender(uri_, type, {}, {})
+{
+}
+
 Sender::~Sender()
 {
     socket.reset();
@@ -81,7 +86,6 @@ void Sender::announce()
     if (!servus::Servus::isAvailable())
     {
         ZEROEQTHROW(std::runtime_error("No zeroconf implementation available"));
-        return;
     }
 
     _service.set("Type", "ZeroEQ");
