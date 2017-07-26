@@ -103,10 +103,9 @@ private:
                 intervals.push_back(sockets.size() - before);
             }
 
-            const uint32_t remaining =
-                duration_cast<milliseconds>(high_resolution_clock::now() -
-                                            startTime)
-                    .count();
+            const auto remaining = duration_cast<milliseconds>(
+                                       high_resolution_clock::now() - startTime)
+                                       .count();
 
             switch (zmq_poll(sockets.data(), int(sockets.size()), remaining))
             {
@@ -152,10 +151,9 @@ private:
                 }
             }
             }
-        } while (haveData &&
-                 duration_cast<milliseconds>(high_resolution_clock::now() -
-                                             startTime)
-                         .count() < timeout);
+        } while (haveData && duration_cast<milliseconds>(
+                                 high_resolution_clock::now() - startTime)
+                                     .count() < timeout);
         return hadData;
     }
 };

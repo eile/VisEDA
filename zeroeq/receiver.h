@@ -87,6 +87,7 @@ protected:
      * their list of sockets.
      */
     virtual void update() {}
+
     /**
      * Add the given connection to the list of receiving sockets.
      *

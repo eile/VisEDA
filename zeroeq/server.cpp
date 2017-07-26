@@ -5,8 +5,10 @@
 
 #include "server.h"
 
-#include "detail/browser.h"
+#include "detail/receiver.h"
 #include "detail/sender.h"
+
+#include <zmq.h>
 
 #include <cassert>
 #include <unordered_map>

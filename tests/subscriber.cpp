@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(construction)
 
 BOOST_AUTO_TEST_CASE(invalid_construction)
 {
-    BOOST_CHECK_THROW(zeroeq::Subscriber(zeroeq::NULL_SESSION),
+    BOOST_CHECK_THROW(zeroeq::Subscriber{zeroeq::NULL_SESSION},
                       std::runtime_error);
     BOOST_CHECK_THROW(zeroeq::Subscriber(""), std::runtime_error);
     BOOST_CHECK_THROW(zeroeq::Subscriber(zeroeq::URI("localhost")),
@@ -37,8 +37,7 @@ BOOST_AUTO_TEST_CASE(invalid_construction)
                       std::runtime_error);
 
     zeroeq::Subscriber shared;
-    BOOST_CHECK_THROW(zeroeq::Subscriber subscriber(zeroeq::NULL_SESSION,
-                                                    shared),
+    BOOST_CHECK_THROW((zeroeq::Subscriber{zeroeq::NULL_SESSION, shared}),
                       std::runtime_error);
     BOOST_CHECK_THROW(zeroeq::Subscriber("", shared), std::runtime_error);
     BOOST_CHECK_THROW(zeroeq::Subscriber(zeroeq::URI("localhost"), shared),

@@ -25,6 +25,11 @@ namespace zeroeq
 {
 namespace detail
 {
+Sender::Sender(const URI& uri_, const int type)
+    : Sender(uri_, type, {}, {})
+{
+}
+
 Sender::Sender(const URI& uri_, const int type, const std::string service,
                const std::string& session)
     : _context(getContext())
@@ -35,11 +40,6 @@ Sender::Sender(const URI& uri_, const int type, const std::string service,
 {
     const int hwm = 0;
     zmq_setsockopt(socket.get(), ZMQ_SNDHWM, &hwm, sizeof(hwm));
-}
-
-Sender::Sender(const URI& uri_, const int type)
-    : Sender(uri_, type, {}, {})
-{
 }
 
 Sender::~Sender()
@@ -62,23 +62,23 @@ void Sender::initURI()
         host.clear();
 
     uint16_t port = uri.getPort();
-    if (host.empty() || port == 0)
+    if (!host.empty() && port != 0)
+        return;
+
+    std::string hostStr, portStr;
+    _getEndPoint(hostStr, portStr);
+
+    if (port == 0)
     {
-        std::string hostStr, portStr;
-        _getEndPoint(hostStr, portStr);
-
-        if (port == 0)
-        {
-            // No overflow is possible unless ZMQ reports bad port number.
-            port = std::stoi(portStr);
-            uri.setPort(port);
-        }
-
-        if (host.empty())
-            uri.setHost(hostStr);
-
-        ZEROEQINFO << "Bound to " << uri << std::endl;
+        // No overflow is possible unless ZMQ reports bad port number.
+        port = std::stoi(portStr);
+        uri.setPort(port);
     }
+
+    if (host.empty())
+        uri.setHost(hostStr);
+
+    ZEROEQINFO << "Bound to " << uri << std::endl;
 }
 
 void Sender::announce()

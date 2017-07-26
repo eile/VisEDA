@@ -5,15 +5,15 @@
 
 #include "client.h"
 
-#include "detail/browser.h"
 #include "detail/common.h"
+#include "detail/receiver.h"
 
 #include <servus/servus.h>
 #include <unordered_map>
 
 namespace zeroeq
 {
-class Client::Impl : public detail::Browser
+class Client::Impl : public detail::Receiver
 {
 public:
     explicit Impl(const std::string& session)
@@ -26,18 +26,15 @@ public:
     }
 
     explicit Impl(const URIs& uris)
-        : Browser(SERVER_SERVICE)
+        : detail::Receiver(SERVER_SERVICE)
         , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
         for (const auto& uri : uris)
         {
-            if (uri.getScheme() == DEFAULT_SCHEMA &&
-                (uri.getHost().empty() || uri.getPort() == 0))
-            {
+            if (!uri.isFullyQualified())
                 ZEROEQTHROW(std::runtime_error(
                     std::string("Non-fully qualified URI used for server")));
-            }
 
             const auto& zmqURI = buildZmqURI(uri);
             if (!addConnection(zmqURI))

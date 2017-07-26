@@ -6,10 +6,10 @@
 
 #include "subscriber.h"
 
-#include "detail/browser.h"
 #include "detail/byteswap.h"
 #include "detail/common.h"
 #include "detail/constants.h"
+#include "detail/receiver.h"
 #include "detail/sender.h"
 #include "detail/socket.h"
 #include "log.h"
@@ -24,28 +24,26 @@
 
 namespace zeroeq
 {
-class Subscriber::Impl : public detail::Browser
+class Subscriber::Impl : public detail::Receiver
 {
 public:
     Impl(const std::string& session)
-        : Browser(PUBLISHER_SERVICE,
-                  session == DEFAULT_SESSION ? getDefaultPubSession() : session)
+        : detail::Receiver(PUBLISHER_SERVICE, session == DEFAULT_SESSION
+                                                  ? getDefaultPubSession()
+                                                  : session)
         , _selfInstance(detail::Sender::getUUID())
     {
     }
 
     Impl(const URIs& uris)
-        : Browser(PUBLISHER_SERVICE)
+        : detail::Receiver(PUBLISHER_SERVICE)
         , _selfInstance(detail::Sender::getUUID())
     {
         for (const URI& uri : uris)
         {
-            if (uri.getScheme() == DEFAULT_SCHEMA &&
-                (uri.getHost().empty() || uri.getPort() == 0))
-            {
+            if (!uri.isFullyQualified())
                 ZEROEQTHROW(std::runtime_error(std::string(
                     "Non-fully qualified URI used for subscriber")));
-            }
 
             const std::string& zmqURI = buildZmqURI(uri);
             if (!addConnection(zmqURI))

@@ -19,10 +19,10 @@ namespace zeroeq
 namespace detail
 {
 /** Manages and updates a set of connections with a zeroconf browser. */
-class Browser
+class Receiver
 {
 public:
-    Browser(const std::string& service, const std::string session)
+    Receiver(const std::string& service, const std::string session)
         : _servus(service)
         , _session(session)
         , _context(detail::getContext())
@@ -39,14 +39,14 @@ public:
         update();
     }
 
-    Browser(const std::string& service)
+    Receiver(const std::string& service)
         : _servus(service)
         , _session(zeroeq::NULL_SESSION)
         , _context(detail::getContext())
     {
     }
 
-    virtual ~Browser()
+    virtual ~Receiver()
     {
         if (_servus.isBrowsing())
             _servus.endBrowsing();
@@ -77,7 +77,7 @@ public:
                 const uint128_t identifier(_servus.get(instance, KEY_INSTANCE));
                 zmq::SocketPtr socket = createSocket(identifier);
                 if (socket)
-                    _addConnection(zmqURI, socket);
+                    _connect(zmqURI, socket);
             }
         }
     }
@@ -86,15 +86,9 @@ public:
     {
         zmq::SocketPtr socket = createSocket(uint128_t());
         if (socket)
-            return _addConnection(zmqURI, socket);
+            return _connect(zmqURI, socket);
         return true;
     }
-
-    /**
-     * Create the socket for zmqURI, return nullptr if connection is to be
-     * ignored.
-     */
-    virtual zmq::SocketPtr createSocket(const uint128_t& instance) = 0;
 
     void addSockets(std::vector<detail::Socket>& entries)
     {
@@ -105,9 +99,16 @@ protected:
     using SocketMap = std::map<std::string, zmq::SocketPtr>;
 
     void* getContext() { return _context.get(); }
+
+    /**
+     * Create the socket for the given instance, return nullptr if connection is
+     * to be ignored.
+     */
+    virtual zmq::SocketPtr createSocket(const uint128_t& instance) = 0;
+
     const SocketMap& getSockets() { return _sockets; }
 
-    bool _addConnection(const std::string& zmqURI, zmq::SocketPtr socket)
+    bool _connect(const std::string& zmqURI, zmq::SocketPtr socket)
     {
         if (zmq_connect(socket.get(), zmqURI.c_str()) == -1)
         {

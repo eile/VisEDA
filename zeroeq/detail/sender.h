@@ -20,9 +20,9 @@ class Sender
     zmq::ContextPtr _context; // must be private before socket
 
 public:
+    Sender(const URI& uri_, const int type);
     Sender(const URI& uri_, const int type, const std::string service,
            const std::string& session);
-    Sender(const URI& uri_, const int type);
     ~Sender();
 
     std::string getAddress() const;
