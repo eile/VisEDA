@@ -40,8 +40,12 @@ bool runOnce(zeroeq::Server& server, const test::Echo& request, const R& reply)
         return zeroeq::ReplyData{R::IDENTIFIER(), reply.toBinary()};
     };
 
-    server.handle(test::Echo::IDENTIFIER(), func);
-    server.handle(test::Empty::IDENTIFIER(), func);
+    if (!server.handle(test::Echo::IDENTIFIER(), func) ||
+        !server.handle(test::Empty::IDENTIFIER(), func) ||
+        server.handle(test::Empty::IDENTIFIER(), func))
+    {
+        throw std::runtime_error("Handler registration failed");
+    }
 
     if (handled)
         throw std::runtime_error("Already handled a request");
@@ -355,4 +359,11 @@ BOOST_AUTO_TEST_CASE(two_clients_shared)
 
     thread.join();
     BOOST_CHECK(serverHandled);
+}
+
+BOOST_AUTO_TEST_CASE(exceptions)
+{
+    BOOST_CHECK_THROW(zeroeq::Server(""), std::runtime_error);
+    BOOST_CHECK_THROW(zeroeq::Server(zeroeq::URI("141.1.1.1")),
+                      std::runtime_error);
 }

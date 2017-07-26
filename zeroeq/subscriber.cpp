@@ -32,9 +32,6 @@ public:
                   session == DEFAULT_SESSION ? getDefaultPubSession() : session)
         , _selfInstance(detail::Sender::getUUID())
     {
-        if (session == zeroeq::NULL_SESSION || session.empty())
-            ZEROEQTHROW(std::runtime_error(
-                std::string("Invalid session name for subscriber")));
     }
 
     Impl(const URIs& uris)
