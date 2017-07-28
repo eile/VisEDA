@@ -17,8 +17,9 @@ class Client::Impl : public detail::Browser
 {
 public:
     explicit Impl(const std::string& session)
-        : Browser(SERVER_SERVICE,
-                  session == DEFAULT_SESSION ? getDefaultRepSession() : session)
+        : detail::Receiver(SERVER_SERVICE, session == DEFAULT_SESSION
+                                               ? getDefaultRepSession()
+                                               : session)
         , _servers(zmq_socket(getContext(), ZMQ_DEALER),
                    [](void* s) { ::zmq_close(s); })
     {
@@ -80,9 +81,9 @@ public:
         uint64_t id;
         uint128_t replyID;
 
-        if (!_recv(&id, sizeof(id)) || !_recv(nullptr, 0))
+        if (!_recv(&id, sizeof(id), ZMQ_DONTWAIT) || !_recv(nullptr, 0, 0))
             return false;
-        const bool payload = _recv(&replyID, sizeof(replyID));
+        const bool payload = _recv(&replyID, sizeof(replyID), 0);
 
 #ifdef ZEROEQ_BIGENDIAN
         detail::byteswap(replyID); // convert to little endian wire protocol
@@ -135,11 +136,12 @@ private:
     }
 
     /** @return true if more data available */
-    bool _recv(void* data, const size_t size)
+    bool _recv(void* data, const size_t size, const int flags)
     {
         zmq_msg_t msg;
         zmq_msg_init(&msg);
-        zmq_msg_recv(&msg, _servers.get(), 0);
+        if (zmq_msg_recv(&msg, _servers.get(), flags) == -1)
+            return false;
 
         if (zmq_msg_size(&msg) != size)
             ZEROEQWARN << "Reply size mismatch, expected " << size << " got "
