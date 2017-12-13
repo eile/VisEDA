@@ -112,7 +112,8 @@ public:
      * @return true if subscription was successful, false otherwise
      * @sa Request
      */
-    bool handle(Method method, const std::string& endpoint, RESTFunc func);
+    ZEROEQHTTP_API bool handle(Method method, const std::string& endpoint,
+                               RESTFunc func);
 
     /** @name Object registration for PUT and GET requests */
     //@{

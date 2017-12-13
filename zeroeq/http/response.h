@@ -2,11 +2,14 @@
  *                     Pawel Podhajski <pawel.podhajski@epfl.ch>
  */
 
-#ifndef ZEROEQ_HTTP_RESPONSE_H
-#define ZEROEQ_HTTP_RESPONSE_H
+#pragma once
 
 #include <map>    // member
 #include <string> // member
+
+#ifdef NOT_IMPLEMENTED
+#undef NOT_IMPLEMENTED
+#endif
 
 namespace zeroeq
 {
@@ -92,5 +95,3 @@ struct Response
 };
 }
 }
-
-#endif
