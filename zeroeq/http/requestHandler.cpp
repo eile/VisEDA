@@ -137,9 +137,11 @@ private:
                         << error.message() << std::endl;
             return;
         }
-
-        _body.append(&range[0], size);
-        _size -= size;
+        if (size > 0)
+        {
+            _body.append(&range[0], size);
+            _size -= size;
+        }
         if (_size > 0)
             _readChunk(connection, method_);
         else
